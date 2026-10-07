@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1940" height="1580" viewBox="0 0 1940 1580" role="img" aria-labelledby="title desc">
+<title id="title">公司公務車借用系統資料表關聯圖</title>
+<desc id="desc">橫列關聯綱目，僅主鍵加底線，外鍵箭頭指向參照主鍵，複合主鍵的各個欄位分別加底線。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10" fill="#393939"/></marker></defs>
+<rect width="1940" height="1580" fill="white"/>
+<g font-family="Microsoft JhengHei, Noto Sans CJK TC, Arial, sans-serif">
+<text x="55" y="52" font-size="32" fill="#202020" font-weight="700">公司公務車借用系統・資料表關聯圖</text>
+<text x="55" y="91" font-size="20" fill="#646464" >僅主鍵（PK）加底線；外鍵（FK）以箭頭指向參照主鍵；複合主鍵各欄位分別加底線。</text>
+<path d="M1570 340V295H330V260H470V232" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1570 720V675H300V445H470V422" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1130 910V865H280V825H470V802" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1740 1410V495H470V530" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M1350 992V1025H1740" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M470 1100V1060H1740" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M470 1372V1410H1740" fill="none" stroke="#535353" stroke-width="1.6" stroke-linejoin="round"/>
+<text x="110" y="180" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">部門</text>
+<text x="110" y="211" font-size="16" fill="#32966c" text-anchor="middle">departments</text>
+<rect x="360" y="150" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="178" font-size="19" fill="#32966c" text-anchor="middle">部門編號</text>
+<text x="470" y="202" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">department_id</text>
+<text x="470" y="223" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="580" y="150" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="178" font-size="19" fill="#32966c" text-anchor="middle">部門名稱</text>
+<text x="690" y="202" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">department_name</text>
+<text x="110" y="370" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">員工</text>
+<text x="110" y="401" font-size="16" fill="#32966c" text-anchor="middle">employees</text>
+<rect x="360" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="368" font-size="19" fill="#32966c" text-anchor="middle">員工編號</text>
+<text x="470" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">employee_id</text>
+<text x="470" y="413" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="580" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="368" font-size="19" fill="#32966c" text-anchor="middle">姓名</text>
+<text x="690" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">employee_name</text>
+<rect x="800" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="368" font-size="19" fill="#32966c" text-anchor="middle">聯絡電話</text>
+<text x="910" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">phone_number</text>
+<text x="910" y="413" font-size="11" fill="#7a7a7a" text-anchor="middle">多值</text>
+<rect x="1020" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1130" y="368" font-size="19" fill="#32966c" text-anchor="middle">密碼</text>
+<text x="1130" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">password</text>
+<rect x="1240" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1350" y="368" font-size="19" fill="#32966c" text-anchor="middle">工號</text>
+<text x="1350" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">employee_code</text>
+<text x="1350" y="413" font-size="11" fill="#7a7a7a" text-anchor="middle">UQ</text>
+<rect x="1460" y="340" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1570" y="368" font-size="19" fill="#32966c" text-anchor="middle">部門編號</text>
+<text x="1570" y="392" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">department_id</text>
+<text x="1570" y="413" font-size="11" fill="#7a7a7a" text-anchor="middle">FK</text>
+<text x="110" y="560" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">車輛</text>
+<text x="110" y="591" font-size="16" fill="#32966c" text-anchor="middle">vehicles</text>
+<rect x="360" y="530" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="558" font-size="19" fill="#32966c" text-anchor="middle">車輛編號</text>
+<text x="470" y="582" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">vehicle_id</text>
+<text x="470" y="603" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="580" y="530" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="558" font-size="19" fill="#32966c" text-anchor="middle">車牌號碼</text>
+<text x="690" y="582" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">license_plate</text>
+<rect x="800" y="530" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="558" font-size="19" fill="#32966c" text-anchor="middle">車型</text>
+<text x="910" y="582" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">vehicle_model</text>
+<text x="110" y="750" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">借用申請</text>
+<text x="110" y="781" font-size="16" fill="#32966c" text-anchor="middle">applications</text>
+<rect x="360" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="748" font-size="19" fill="#32966c" text-anchor="middle">申請編號</text>
+<text x="470" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">application_id</text>
+<text x="470" y="793" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="580" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="748" font-size="19" fill="#32966c" text-anchor="middle">借用用途</text>
+<text x="690" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">purpose</text>
+<rect x="800" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="748" font-size="19" fill="#32966c" text-anchor="middle">預計起日</text>
+<text x="910" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" textLength="190" text-anchor="middle" text-decoration="none">requested_start_date</text>
+<rect x="1020" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1130" y="748" font-size="19" fill="#32966c" text-anchor="middle">預計迄日</text>
+<text x="1130" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">requested_end_date</text>
+<rect x="1240" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1350" y="748" font-size="19" fill="#32966c" text-anchor="middle">審核狀態</text>
+<text x="1350" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">approval_status</text>
+<rect x="1460" y="720" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1570" y="748" font-size="19" fill="#32966c" text-anchor="middle">員工編號</text>
+<text x="1570" y="772" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">employee_id</text>
+<text x="1570" y="793" font-size="11" fill="#7a7a7a" text-anchor="middle">FK</text>
+<text x="110" y="940" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">派車紀錄</text>
+<text x="110" y="971" font-size="16" fill="#32966c" text-anchor="middle">dispatches</text>
+<rect x="360" y="910" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="938" font-size="19" fill="#32966c" text-anchor="middle">派車編號</text>
+<text x="470" y="962" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">dispatch_id</text>
+<text x="470" y="983" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="580" y="910" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="938" font-size="19" fill="#32966c" text-anchor="middle">使用起日</text>
+<text x="690" y="962" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">actual_start_date</text>
+<rect x="800" y="910" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="938" font-size="19" fill="#32966c" text-anchor="middle">使用迄日</text>
+<text x="910" y="962" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">actual_end_date</text>
+<rect x="1020" y="910" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1130" y="938" font-size="19" fill="#32966c" text-anchor="middle">申請編號</text>
+<text x="1130" y="962" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">application_id</text>
+<text x="1130" y="983" font-size="11" fill="#7a7a7a" text-anchor="middle">FK, UQ</text>
+<rect x="1240" y="910" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1350" y="938" font-size="19" fill="#32966c" text-anchor="middle">車輛編號</text>
+<text x="1350" y="962" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">vehicle_id</text>
+<text x="1350" y="983" font-size="11" fill="#7a7a7a" text-anchor="middle">FK</text>
+<text x="110" y="1130" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">保養紀錄</text>
+<text x="110" y="1161" font-size="16" fill="#32966c" text-anchor="middle">maintenance_records</text>
+<rect x="360" y="1100" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="1128" font-size="19" fill="#32966c" text-anchor="middle">車輛編號</text>
+<text x="470" y="1152" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">vehicle_id</text>
+<text x="470" y="1173" font-size="11" fill="#7a7a7a" text-anchor="middle">PK, FK</text>
+<rect x="580" y="1100" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="1128" font-size="19" fill="#32966c" text-anchor="middle">保養日期</text>
+<text x="690" y="1152" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">maintenance_date</text>
+<text x="690" y="1173" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="800" y="1100" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="1128" font-size="19" fill="#32966c" text-anchor="middle">保養項目</text>
+<text x="910" y="1152" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">maintenance_item</text>
+<rect x="1020" y="1100" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1130" y="1128" font-size="19" fill="#32966c" text-anchor="middle">保養費用</text>
+<text x="1130" y="1152" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">maintenance_cost</text>
+<text x="110" y="1320" font-size="23" fill="#202020" text-anchor="middle" font-weight="700">加油紀錄</text>
+<text x="110" y="1351" font-size="16" fill="#32966c" text-anchor="middle">refueling_records</text>
+<rect x="360" y="1290" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="470" y="1318" font-size="19" fill="#32966c" text-anchor="middle">車輛編號</text>
+<text x="470" y="1342" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">vehicle_id</text>
+<text x="470" y="1363" font-size="11" fill="#7a7a7a" text-anchor="middle">PK, FK</text>
+<rect x="580" y="1290" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="690" y="1318" font-size="19" fill="#32966c" text-anchor="middle">加油日期</text>
+<text x="690" y="1342" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="underline">refueling_date</text>
+<text x="690" y="1363" font-size="11" fill="#7a7a7a" text-anchor="middle">PK</text>
+<rect x="800" y="1290" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="910" y="1318" font-size="19" fill="#32966c" text-anchor="middle">公升數</text>
+<text x="910" y="1342" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">fuel_liters</text>
+<rect x="1020" y="1290" width="220" height="82" fill="white" stroke="#333333" stroke-width="1.6"/>
+<text x="1130" y="1318" font-size="19" fill="#32966c" text-anchor="middle">金額</text>
+<text x="1130" y="1342" font-size="17" fill="#202020" font-family="Arial, sans-serif" text-anchor="middle" text-decoration="none">fuel_cost</text>
+<text x="55" y="1470" font-size="20" fill="#202020" >複合主鍵：保養 (vehicle_id, maintenance_date)；加油 (vehicle_id, refueling_date)。日期為各弱實體的部分鍵。</text>
+<text x="55" y="1508" font-size="20" fill="#202020" >dispatches.application_id 為 UNIQUE：每筆申請最多一筆派車；員工與車輛的 M:N 經申請、派車連結。</text>
+<text x="55" y="1546" font-size="19" fill="#646464" >聯絡電話為 ERD 的多值屬性，不是主鍵；本圖保留 ERD 原屬性，正規化電話儲存方式另見資料庫規格。</text>
+</g></svg>
