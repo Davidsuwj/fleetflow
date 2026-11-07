@@ -4,13 +4,9 @@
 
 ## 架構
 
-```mermaid
-flowchart LR
- E[工號／密碼登入] --> S[GPT Sites 網頁與 Worker]
- S --> D[(PostgreSQL project_17 / fleetflow)]
-```
+![FleetFlow 系統架構與部署方式](docs/system-architecture.svg)
 
-JavaScript 為正式 Worker 後端；Python 為相同資料庫的參考 API。網站不需要本機服務或 ngrok，沒有管理者介面。
+Repo 所記載的正式路徑以 JavaScript 為 Worker 後端；前端以 HTTPS 同源 JSON API 存取 Worker，Worker 以 PostgreSQL TCP（預設 5432）連線資料庫。Python 為相同資料庫的參考 API。網站不需要本機服務或 ngrok，沒有管理者介面。程式語言、API、TCP／TLS、目標平台相容性提醒與部署方式見[完整系統架構](docs/SYSTEM_ARCHITECTURE.md)。
 
 ## 驗收條件
 

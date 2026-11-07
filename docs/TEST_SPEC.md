@@ -7,7 +7,9 @@ npm run build
 python -m pytest -q
 ```
 
-JavaScript API 22 項、Worker 6 項，共 28 項；Python 28 項，包含三種日期 migration 案例及工號 migration 保留資料案例。每次整合測試在獨立 fleetflow_test_<12 hex> schema，結束只刪除自己的 schema。
+JavaScript API 22 項、Worker 6 項、折線圖 5 項，共 33 項；Python 28 項，包含三種日期 migration 案例及工號 migration 保留資料案例。每次整合測試在獨立 fleetflow_test_<12 hex> schema，結束只刪除自己的 schema。
+
+折線圖與 Worker 可不連資料庫單獨驗證：`node --test tests/monthly-chart.test.mjs tests/worker.test.mjs`。折線圖測試涵蓋六個月份、全零、單一非零、混合與較大筆數、整數刻度及文字 escaping；畫面以可縮放 SVG 線條搭配不隨 SVG 壓縮的月份與筆數文字，並提供螢幕閱讀器等價資訊。
 
 | 範圍 | 驗證 |
 |---|---|

@@ -6,6 +6,14 @@
 
 前端與 JavaScript Worker API 直接部署 GPT Sites，連線 PostgreSQL，不依賴 ngrok、Railway 或本機服務。Python FastAPI 參考版本保留。
 
+## 系統架構
+
+![FleetFlow 系統架構與部署方式](docs/system-architecture.svg)
+
+Repo 所記載的正式路徑：**HTML／CSS／JavaScript 瀏覽器前端 → HTTPS 同源 JSON API → GPT Sites JavaScript Worker → PostgreSQL TCP（預設 5432）**。建置使用 Node.js 與 esbuild；Python FastAPI、Docker／Railway 為獨立參考路徑。資料庫 TLS 依既有部署規格目前停用，不等同瀏覽器的 HTTPS 保護；目標平台的原生 TCP 相容性未於本次重新驗證。
+
+[完整架構、API 與通訊說明](docs/SYSTEM_ARCHITECTURE.md) · [開啟 SVG 架構圖](docs/system-architecture.svg)
+
 ## 功能
 
 | 頁面 | 功能 |
@@ -84,7 +92,7 @@ python -m pytest -q
 
 ## 文件與限制
 
-[功能](docs/PRODUCT_SPEC.md) · [資料庫](docs/DATABASE_SPEC.md) · [API](docs/API_SPEC.md) · [安全](docs/SECURITY_SPEC.md) · [部署](docs/DEPLOYMENT_SPEC.md) · [測試](docs/TEST_SPEC.md) · [Python OpenAPI](docs/openapi.json)
+[架構](docs/SYSTEM_ARCHITECTURE.md) · [功能](docs/PRODUCT_SPEC.md) · [資料庫](docs/DATABASE_SPEC.md) · [API](docs/API_SPEC.md) · [安全](docs/SECURITY_SPEC.md) · [部署](docs/DEPLOYMENT_SPEC.md) · [測試](docs/TEST_SPEC.md) · [Python OpenAPI](docs/openapi.json)
 
 尚無分頁、密碼找回或管理者介面。員工由建置工具建立；未設定密碼的員工不能登入。逾期未歸還不會自動延長原預約，直接 SQL 仍可繞過 API 業務檢查。此為課程 demo。
 

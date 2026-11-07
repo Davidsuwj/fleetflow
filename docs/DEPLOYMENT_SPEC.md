@@ -2,6 +2,8 @@
 
 ## 正式架構
 
+[系統架構圖與通訊／部署流程](SYSTEM_ARCHITECTURE.md)涵蓋程式語言、JSON API、PostgreSQL TCP／TLS，以及本機與 Python 參考路徑。
+
 GPT Sites 同時執行前端與 JavaScript Worker API，直接連至 PostgreSQL project_17 的 fleetflow schema。網站不使用 ngrok、Railway 或本機常駐服務。Python FastAPI 對照版與資料庫建置工具保留於 backend/，不列入正式請求流程。
 
 Site：https://fleetflow-company-vehicles.davidsu881209.chatgpt.site

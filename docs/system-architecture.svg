@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1160" viewBox="0 0 1600 1160" role="img" aria-labelledby="title desc">
+<title id="title">FleetFlow 系統架構與部署方式</title>
+<desc id="desc">正式路徑為瀏覽器經 HTTPS 存取 GPT Sites JavaScript Worker，Worker 提供 HTML、CSS、JavaScript 靜態資產及同源 JSON API，再以 PostgreSQL TCP 5432 連接 project_17 的 fleetflow schema。資料庫 TLS 依現有部署文件停用。下方說明 Node 與 esbuild 建置發布，以及不屬於正式請求路徑的本機 Node 與 Python FastAPI、Docker、Railway 參考設定。</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#4b6484" stroke-width="1.5"/></marker></defs>
+<style>text{font-family:'Noto Sans CJK TC','Microsoft JhengHei',sans-serif;fill:#162c49} .muted{fill:#536780} .blue{fill:#1c4e93} .green{fill:#11664e} .amber{fill:#8b4a12}</style>
+<rect width="1600" height="1160" fill="#f4f7fb"/>
+
+<text x="48" y="66" font-size="40" font-weight="750" class="" text-anchor="start">FleetFlow</text>
+<text x="265" y="66" font-size="32" font-weight="650" class="" text-anchor="start">系統架構與部署方式</text>
+<text x="48" y="108" font-size="21" font-weight="400" class="muted" text-anchor="start">依 repository 程式碼與部署規格整理｜正式服務、通訊協定與參考路徑分開呈現</text>
+<rect x="32" y="142" width="1536" height="602" rx="24" fill="#ffffff" stroke="#c7d5e5" stroke-width="2"/>
+<rect x="54" y="163" width="142" height="37" rx="12" fill="#e6f4ef" stroke="#e6f4ef" stroke-width="2"/>
+<text x="125" y="189" font-size="21" font-weight="700" class="green" text-anchor="middle">正式網站</text>
+<text x="220" y="189" font-size="23" font-weight="600" class="" text-anchor="start">GPT Sites 提供前端與 API，PostgreSQL 保存資料</text>
+<rect x="56" y="273" width="300" height="302" rx="18" fill="#f5f8ff" stroke="#abc5e6" stroke-width="2"/>
+<text x="80" y="314" font-size="25" font-weight="700" class="blue" text-anchor="start">01  員工瀏覽器</text>
+<text x="80" y="361" font-size="24" font-weight="650" class="" text-anchor="start">HTML + CSS</text>
+<text x="80" y="397" font-size="24" font-weight="650" class="" text-anchor="start">原生 JavaScript</text>
+<text x="80" y="441" font-size="20" font-weight="400" class="muted" text-anchor="start">DOM / hash 導覽</text>
+<text x="80" y="474" font-size="20" font-weight="400" class="muted" text-anchor="start">同源 fetch → /api/*</text>
+<text x="80" y="516" font-size="20" font-weight="400" class="muted" text-anchor="start">Cookie + CSRF token</text>
+<text x="80" y="549" font-size="20" font-weight="600" class="blue" text-anchor="start">不含資料庫帳密</text>
+<rect x="526" y="228" width="562" height="407" rx="18" fill="#edf4ff" stroke="#7fa9d9" stroke-width="2"/>
+<text x="550" y="265" font-size="25" font-weight="700" class="blue" text-anchor="start">02  GPT Sites · JavaScript Worker</text>
+<rect x="550" y="288" width="514" height="100" rx="12" fill="#ffffff" stroke="#b5cce7" stroke-width="2"/>
+<text x="574" y="322" font-size="22" font-weight="700" class="" text-anchor="start">靜態資產</text>
+<text x="574" y="357" font-size="20" font-weight="400" class="muted" text-anchor="start">HTML / CSS / JS / SVG / WebP</text>
+<rect x="550" y="413" width="514" height="158" rx="12" fill="#ffffff" stroke="#b5cce7" stroke-width="2"/>
+<text x="574" y="450" font-size="23" font-weight="700" class="" text-anchor="start">同源 JSON API · /api/*</text>
+<text x="574" y="485" font-size="20" font-weight="400" class="" text-anchor="start">登入、申請、查空車、歸還與統計</text>
+<text x="574" y="518" font-size="19" font-weight="400" class="" text-anchor="start">路由白名單 / session / CSRF / 交易與鎖定</text>
+<text x="574" y="550" font-size="20" font-weight="600" class="blue" text-anchor="start">Postgres.js → workerd TCP 驅動</text>
+<text x="550" y="607" font-size="20" font-weight="500" class="muted" text-anchor="start">worker.js + site-backend/*.js</text>
+<path d="M 356 337 L 520 337" fill="none" stroke="#4b6484" stroke-width="2.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="441" y="305" font-size="20" font-weight="700" class="blue" text-anchor="middle">HTTPS :443</text>
+<text x="441" y="369" font-size="19" font-weight="400" class="muted" text-anchor="middle">靜態檔案</text>
+<path d="M 356 489 L 520 489" fill="none" stroke="#4b6484" stroke-width="2.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="441" y="458" font-size="19" font-weight="700" class="blue" text-anchor="middle">HTTPS / JSON</text>
+<text x="441" y="521" font-size="19" font-weight="400" class="muted" text-anchor="middle">同源 API</text>
+<rect x="1280" y="273" width="264" height="302" rx="18" fill="#eef8f3" stroke="#9ac8b4" stroke-width="2"/>
+<text x="1304" y="314" font-size="25" font-weight="700" class="green" text-anchor="start">03  PostgreSQL</text>
+<text x="1304" y="360" font-size="19" font-weight="400" class="muted" text-anchor="start">database</text>
+<text x="1304" y="392" font-size="24" font-weight="700" class="" text-anchor="start">project_17</text>
+<text x="1304" y="435" font-size="19" font-weight="400" class="muted" text-anchor="start">schema</text>
+<text x="1304" y="467" font-size="24" font-weight="700" class="" text-anchor="start">fleetflow</text>
+<text x="1304" y="511" font-size="20" font-weight="400" class="" text-anchor="start">業務資料 / session</text>
+<text x="1304" y="546" font-size="20" font-weight="400" class="" text-anchor="start">SQL 交易與 row lock</text>
+<path d="M 1088 486 L 1274 486" fill="none" stroke="#4b6484" stroke-width="2.5" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="1184" y="416" font-size="19" font-weight="600" class="green" text-anchor="middle">PostgreSQL</text>
+<text x="1184" y="446" font-size="22" font-weight="700" class="green" text-anchor="middle">TCP :5432</text>
+<text x="1184" y="520" font-size="17" font-weight="400" class="muted" text-anchor="middle">cloudflare:sockets</text>
+<rect x="56" y="658" width="1488" height="61" rx="12" fill="#fff4e5" stroke="#f1cea1" stroke-width="2"/>
+<text x="78" y="684" font-size="20" font-weight="600" class="amber" text-anchor="start">資料庫 TLS：既有部署規格記載為 disable；JavaScript 僅在 DB_SSLMODE=require 時啟用 TLS。</text>
+<text x="78" y="708" font-size="17" font-weight="400" class="amber" text-anchor="start">瀏覽器 HTTPS 不代表資料庫連線也已加密。本圖未即時檢查線上設定，也不固定瀏覽器協商的 HTTP 版本。</text>
+<rect x="32" y="775" width="766" height="329" rx="22" fill="#ffffff" stroke="#b7c9e0" stroke-width="2"/>
+<text x="56" y="816" font-size="25" font-weight="700" class="blue" text-anchor="start">建置與發布 · 正式路徑</text>
+<rect x="56" y="846" width="206" height="121" rx="12" fill="#f1f6fd" stroke="#c7d5e5" stroke-width="2"/>
+<text x="76" y="881" font-size="23" font-weight="700" class="" text-anchor="start">Node.js 22+</text>
+<text x="76" y="914" font-size="21" font-weight="400" class="" text-anchor="start">npm ci</text>
+<text x="76" y="945" font-size="21" font-weight="400" class="" text-anchor="start">npm run build</text>
+<rect x="313" y="846" width="184" height="121" rx="12" fill="#f1f6fd" stroke="#c7d5e5" stroke-width="2"/>
+<text x="335" y="881" font-size="23" font-weight="700" class="" text-anchor="start">esbuild</text>
+<text x="335" y="914" font-size="20" font-weight="400" class="" text-anchor="start">workerd 條件</text>
+<text x="335" y="945" font-size="21" font-weight="400" class="" text-anchor="start">ES module</text>
+<rect x="548" y="846" width="226" height="121" rx="12" fill="#f1f6fd" stroke="#c7d5e5" stroke-width="2"/>
+<text x="568" y="881" font-size="19" font-weight="700" class="" text-anchor="start">單一 Worker bundle</text>
+<text x="568" y="914" font-size="17" font-weight="400" class="" text-anchor="start">dist/server/index.js</text>
+<text x="568" y="945" font-size="20" font-weight="400" class="" text-anchor="start">+ 六個靜態資產</text>
+<path d="M 262 906 L 307 906" fill="none" stroke="#4b6484" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M 497 906 L 542 906" fill="none" stroke="#4b6484" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="56" y="1004" font-size="20" font-weight="600" class="" text-anchor="start">沿用 .openai/hosting.json 對應的 GPT Site 發布</text>
+<text x="56" y="1037" font-size="19" font-weight="400" class="muted" text-anchor="start">DB_* 由 Sites 執行環境提供，秘密不打包至前端</text>
+<text x="56" y="1075" font-size="18" font-weight="400" class="muted" text-anchor="start">GitHub 保存程式碼；CI 範本未啟用，不代表 push 即上線</text>
+<rect x="826" y="775" width="742" height="329" rx="22" fill="#fafafa" stroke="#c3c9d2" stroke-width="2" stroke-dasharray="8 6"/>
+<text x="850" y="816" font-size="24" font-weight="700" class="" text-anchor="start">本機與參考路徑 · 不在正式請求流程</text>
+<rect x="850" y="846" width="323" height="121" rx="12" fill="#ffffff" stroke="#d3d9e1" stroke-width="2"/>
+<text x="871" y="881" font-size="23" font-weight="700" class="" text-anchor="start">本機 Node 預覽</text>
+<text x="871" y="914" font-size="19" font-weight="400" class="" text-anchor="start">npm run dev → HTTP :8770</text>
+<text x="871" y="945" font-size="18" font-weight="400" class="muted" text-anchor="start">同一份 Worker / API 原始碼</text>
+<rect x="1197" y="846" width="347" height="121" rx="12" fill="#ffffff" stroke="#d3d9e1" stroke-width="2"/>
+<text x="1218" y="881" font-size="22" font-weight="700" class="" text-anchor="start">Python 3.11+ 參考 API</text>
+<text x="1218" y="914" font-size="19" font-weight="400" class="" text-anchor="start">FastAPI / Uvicorn / psycopg</text>
+<text x="1218" y="945" font-size="18" font-weight="400" class="muted" text-anchor="start">本機 :8767；Docker 預設 :8080</text>
+<text x="850" y="1004" font-size="19" font-weight="600" class="" text-anchor="start">Dockerfile / railway.toml：可選部署設定，非正式站依賴</text>
+<text x="850" y="1037" font-size="19" font-weight="400" class="muted" text-anchor="start">Python 維護工具：migration、seed、密碼初始化</text>
+<text x="850" y="1075" font-size="18" font-weight="400" class="muted" text-anchor="start">Node / Python 另以 TCP 連 DB；測試須明確指定隔離 schema</text>
+<text x="48" y="1138" font-size="19" font-weight="400" class="muted" text-anchor="start">完整說明：docs/SYSTEM_ARCHITECTURE.md｜依 repo 設計；目標平台 TCP 相容性未重新驗證</text>
+</svg>
