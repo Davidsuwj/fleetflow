@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2730" height="1625" viewBox="0 0 2730 1625">
-  <style>text{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;font-size:22px;fill:#183047}rect,ellipse,polygon{fill:white;stroke:#274e6b;stroke-width:2}line{stroke:#274e6b;stroke-width:2}.card{font-size:24px;font-weight:bold;fill:#135c95}</style>
+  <style>text{font-family:'Microsoft JhengHei','Noto Sans CJK TC','Noto Sans TC',sans-serif;font-size:22px;fill:#183047}rect,ellipse,polygon{fill:white;stroke:#274e6b;stroke-width:2}line{stroke:#274e6b;stroke-width:2}.card{font-size:24px;font-weight:bold;fill:#135c95}</style>
   <rect width="2730" height="1625" style="fill:#f7fafc;stroke:none" />
   <rect x="78" y="604.5" width="234" height="91" />
   <text x="195" y="660.4" text-anchor="middle" class="">部門</text>
@@ -161,8 +161,4 @@
   <ellipse cx="585" cy="845" rx="123" ry="45" />
   <text x="585" y="838" text-anchor="middle">密碼</text>
   <text x="585" y="866" text-anchor="middle" style="font-family:Consolas,monospace;font-size:16px;fill:#39536a">password</text>
-  <line x1="1110" y1="845" x2="910" y2="695.5" />
-  <ellipse cx="1110" cy="845" rx="123" ry="45" />
-  <text x="1110" y="838" text-anchor="middle">工號</text>
-  <text x="1110" y="866" text-anchor="middle" style="font-family:Consolas,monospace;font-size:16px;fill:#39536a">employee_code</text>
 </svg>

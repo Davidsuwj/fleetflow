@@ -7,7 +7,9 @@ npm run build
 python -m pytest -q
 ```
 
-JavaScript API 22 項、Worker 6 項、折線圖 5 項，共 33 項；Python 28 項，包含三種日期 migration 案例及工號 migration 保留資料案例。每次整合測試在獨立 fleetflow_test_<12 hex> schema，結束只刪除自己的 schema。
+本次員工編號整併驗證：隔離本機 PostgreSQL 18.6，`npm test` **39/39 通過**（Site API 23、身分驗證 2、介面 3、Worker 6、折線圖 5）；`python -m pytest -q` **58/58 通過**（包含日期 migration 3 案例）。全新建置與重複執行 migration 通過；OpenAPI 已由實際 FastAPI app 重新產生並比對一致。測試未連線正式資料庫。
+
+JavaScript API、Worker、折線圖與 Python 測試涵蓋登入及資料存取，另包含日期 migration 與員工識別整併 migration 保留資料案例；實際項數以當次測試輸出為準。每次整合測試在獨立 fleetflow_test_<12 hex> schema，結束只刪除自己的 schema。
 
 折線圖與 Worker 可不連資料庫單獨驗證：`node --test tests/monthly-chart.test.mjs tests/worker.test.mjs`。折線圖測試涵蓋六個月份、全零、單一非零、混合與較大筆數、整數刻度及文字 escaping；畫面以可縮放 SVG 線條搭配不隨 SVG 壓縮的月份與筆數文字，並提供螢幕閱讀器等價資訊。
 
@@ -16,8 +18,8 @@ JavaScript API 22 項、Worker 6 項、折線圖 5 項，共 33 項；Python 28 
 | 登入 | 正確／錯誤密碼、未登入拒絕、HttpOnly Cookie、登出撤銷、過期、持續登入 |
 | 身分 | session 決定員工，偽造 query／body 403、他人單不能修改或刪除 |
 | CSRF | 缺 CSRF 的寫入拒絕、外站 Origin 拒絕 |
-| 密碼 | employees.password 明碼欄位；一般 API 與共享預約不回傳密碼 |
-| 工號 | EMP0001 格式；拒絕數字流水號登入；超過四位不截斷；轉換保留員工密碼與申請關聯 |
+| 密碼 | employees.password 欄位；一般 API 與共享預約不回傳密碼 |
+| 員工編號 | 數字 employee_id 登入；舊 EMP0001／employee_code 輸入映射到同一員工；合併保留密碼、session 與申請關聯，移除獨立欄位 |
 | 限流 | 錯誤登入次數交易後保留、達上限 429 |
 | 共享預約 | 本人 context 可讀他人的共享用車，但本人申請與統計不混入他人 |
 | 查空車 | 起迄無效 422，占用車不可借；修改只可排除本人本筆預約 |
@@ -36,4 +38,4 @@ ERD 七實體：員工含一般 password，只有員工編號為 PK；電話雙�
 未進行長時負載、全面跨瀏覽器或災難復原測試。CI 範本 docs/CI_TEMPLATE.yml 尚未啟用。
 介面整合驗證：隔離資料包含未來、使用中及已歸還申請；歸還操作使用 dispatch_id（刻意不同於 application_id），已歸還篩選正確。移除我的行程導覽；申請按鈕僅在我的申請。Chrome 320px／375px 日期欄位各占整列，無頁面橫向溢出，日期時間完整可見；桌面仍同列。未實測 iOS Safari。
 
-車輛紀錄驗收：未選車不顯示紀錄；切換車牌只顯示該車資料；保養／加油可切換；鍵盤 Enter 可選車；登出清除紀錄與選擇。模擬資料首次補入 8 筆保養與 12 筆加油，再次執行補入 0 筆。
+車輛紀錄驗收：未選車不顯示紀錄；切換車牌只顯示該車資料；保養／加油可切換；鍵盤 Enter 可選車；登出清除紀錄與選擇。模擬資料匯入可重複執行，不重複建立既有紀錄。

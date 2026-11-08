@@ -11,10 +11,10 @@ load_dotenv(ROOT / '.env')
 @contextmanager
 def connection():
     with psycopg.connect(
-        host=os.environ.get('DB_HOST', '140.117.68.35'),
+        host=os.environ['DB_HOST'],
         port=int(os.environ.get('DB_PORT', '5432')),
-        dbname=os.environ.get('DB_NAME', 'project_17'),
-        user=os.environ.get('DB_USER', 'project_17'),
+        dbname=os.environ['DB_NAME'],
+        user=os.environ['DB_USER'],
         password=os.environ['DB_PASSWORD'],
         sslmode=os.environ.get('DB_SSLMODE', 'prefer'),
         connect_timeout=8, row_factory=dict_row,
@@ -36,5 +36,7 @@ def migrate():
             conn.execute((ROOT / 'backend/migrations/004_date_partial_keys.sql').read_text(encoding='utf-8'))
         if not conn.execute('SELECT 1 FROM schema_migrations WHERE version=5').fetchone():
             conn.execute((ROOT / 'backend/migrations/005_employee_login.sql').read_text(encoding='utf-8'))
-        if not conn.execute('SELECT 1 FROM schema_migrations WHERE version=6').fetchone():
+        if not conn.execute('SELECT 1 FROM schema_migrations WHERE version IN (6,7)').fetchone():
             conn.execute((ROOT / 'backend/migrations/006_employee_codes.sql').read_text(encoding='utf-8'))
+        if not conn.execute('SELECT 1 FROM schema_migrations WHERE version=7').fetchone():
+            conn.execute((ROOT / 'backend/migrations/007_unify_employee_identity.sql').read_text(encoding='utf-8'))

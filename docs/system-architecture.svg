@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1160" viewBox="0 0 1600 1160" role="img" aria-labelledby="title desc">
 <title id="title">FleetFlow 系統架構與部署方式</title>
-<desc id="desc">正式路徑為瀏覽器經 HTTPS 存取 GPT Sites JavaScript Worker，Worker 提供 HTML、CSS、JavaScript 靜態資產及同源 JSON API，再以 PostgreSQL TCP 5432 連接 project_17 的 fleetflow schema。資料庫 TLS 依現有部署文件停用。下方說明 Node 與 esbuild 建置發布，以及不屬於正式請求路徑的本機 Node 與 Python FastAPI、Docker、Railway 參考設定。</desc>
+<desc id="desc">正式路徑為瀏覽器經 HTTPS 存取 GPT Sites JavaScript Worker，Worker 提供 HTML、CSS、JavaScript 靜態資產及同源 JSON API，再以 PostgreSQL TCP 5432 連接 DB_NAME 的 fleetflow schema。資料庫傳輸保護須於正式使用前另行驗證。下方說明 Node 與 esbuild 建置發布，以及不屬於正式請求路徑的本機 Node 與 Python FastAPI、Docker、Railway 參考設定。</desc>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#4b6484" stroke-width="1.5"/></marker></defs>
 <style>text{font-family:'Noto Sans CJK TC','Microsoft JhengHei',sans-serif;fill:#162c49} .muted{fill:#536780} .blue{fill:#1c4e93} .green{fill:#11664e} .amber{fill:#8b4a12}</style>
 <rect width="1600" height="1160" fill="#f4f7fb"/>
@@ -40,7 +40,7 @@
 <rect x="1280" y="273" width="264" height="302" rx="18" fill="#eef8f3" stroke="#9ac8b4" stroke-width="2"/>
 <text x="1304" y="314" font-size="25" font-weight="700" class="green" text-anchor="start">03  PostgreSQL</text>
 <text x="1304" y="360" font-size="19" font-weight="400" class="muted" text-anchor="start">database</text>
-<text x="1304" y="392" font-size="24" font-weight="700" class="" text-anchor="start">project_17</text>
+<text x="1304" y="392" font-size="24" font-weight="700" class="" text-anchor="start">DB_NAME</text>
 <text x="1304" y="435" font-size="19" font-weight="400" class="muted" text-anchor="start">schema</text>
 <text x="1304" y="467" font-size="24" font-weight="700" class="" text-anchor="start">fleetflow</text>
 <text x="1304" y="511" font-size="20" font-weight="400" class="" text-anchor="start">業務資料 / session</text>
@@ -50,7 +50,7 @@
 <text x="1184" y="446" font-size="22" font-weight="700" class="green" text-anchor="middle">TCP :5432</text>
 <text x="1184" y="520" font-size="17" font-weight="400" class="muted" text-anchor="middle">cloudflare:sockets</text>
 <rect x="56" y="658" width="1488" height="61" rx="12" fill="#fff4e5" stroke="#f1cea1" stroke-width="2"/>
-<text x="78" y="684" font-size="20" font-weight="600" class="amber" text-anchor="start">資料庫 TLS：既有部署規格記載為 disable；JavaScript 僅在 DB_SSLMODE=require 時啟用 TLS。</text>
+<text x="78" y="684" font-size="20" font-weight="600" class="amber" text-anchor="start">課程 demo：正式使用前須強化密碼驗證與資料庫傳輸保護；本圖不代表已完成安全強化。</text>
 <text x="78" y="708" font-size="17" font-weight="400" class="amber" text-anchor="start">瀏覽器 HTTPS 不代表資料庫連線也已加密。本圖未即時檢查線上設定，也不固定瀏覽器協商的 HTTP 版本。</text>
 <rect x="32" y="775" width="766" height="329" rx="22" fill="#ffffff" stroke="#b7c9e0" stroke-width="2"/>
 <text x="56" y="816" font-size="25" font-weight="700" class="blue" text-anchor="start">建置與發布 · 正式路徑</text>

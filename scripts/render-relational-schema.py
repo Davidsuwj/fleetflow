@@ -6,7 +6,7 @@ from html import escape
 # Only relationship FKs are added; implementation-only attributes are excluded.
 tables = [
     ('departments','部門',0,0,[('department_id','部門編號','PK'),('department_name','部門名稱','')]),
-    ('employees','員工',0,0,[('employee_id','員工編號','PK'),('employee_name','姓名',''),('phone_number','聯絡電話','多值'),('password','密碼',''),('employee_code','工號','UQ'),('department_id','部門編號','FK')]),
+    ('employees','員工',0,0,[('employee_id','員工編號','PK'),('employee_name','姓名',''),('phone_number','聯絡電話','多值'),('password','密碼',''),('department_id','部門編號','FK')]),
     ('vehicles','車輛',0,0,[('vehicle_id','車輛編號','PK'),('license_plate','車牌號碼',''),('vehicle_model','車型','')]),
     ('applications','借用申請',0,0,[('application_id','申請編號','PK'),('purpose','借用用途',''),('requested_start_date','預計起日',''),('requested_end_date','預計迄日',''),('approval_status','審核狀態',''),('employee_id','員工編號','FK')]),
     ('dispatches','派車紀錄',0,0,[('dispatch_id','派車編號','PK'),('actual_start_date','使用起日',''),('actual_end_date','使用迄日',''),('application_id','申請編號','FK UQ'),('vehicle_id','車輛編號','FK')]),
@@ -32,7 +32,7 @@ svg=['<svg xmlns="http://www.w3.org/2000/svg" width="1940" height="1580" viewBox
 # Child FK routes join a bus only when they reference the same parent PK.
 # No route crosses a table or an unrelated relationship.
 paths=[
-    ('M1570 340V295H330V260H470V232',True),
+    ('M1350 340V295H330V260H470V232',True),
     ('M1570 720V675H300V445H470V422',True),
     ('M1130 910V865H280V825H470V802',True),
     ('M1740 1410V495H470V530',True),

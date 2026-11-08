@@ -1,6 +1,6 @@
 # FleetFlow｜公司公務車借用系統
 
-以**工號與密碼登入**的公務車借用 demo。員工可新增、修改、查詢、取消、刪除自己的申請，登記歸還及查看個人統計；「車輛預約」可查看大家的用車安排並依起迄時間查空車。
+以**員工編號與密碼登入**的公務車借用 demo。員工可新增、修改、查詢、取消、刪除自己的申請，登記歸還及查看個人統計；「車輛預約」可查看大家的用車安排並依起迄時間查空車。
 
 [GPT Site](https://fleetflow-company-vehicles.davidsu881209.chatgpt.site) · [Public GitHub](https://github.com/Davidsuwj/fleetflow) · [完整規格](SPEC.md)
 
@@ -10,7 +10,7 @@
 
 ![FleetFlow 系統架構與部署方式](docs/system-architecture.svg)
 
-Repo 所記載的正式路徑：**HTML／CSS／JavaScript 瀏覽器前端 → HTTPS 同源 JSON API → GPT Sites JavaScript Worker → PostgreSQL TCP（預設 5432）**。建置使用 Node.js 與 esbuild；Python FastAPI、Docker／Railway 為獨立參考路徑。資料庫 TLS 依既有部署規格目前停用，不等同瀏覽器的 HTTPS 保護；目標平台的原生 TCP 相容性未於本次重新驗證。
+Repo 所記載的正式路徑：**HTML／CSS／JavaScript 瀏覽器前端 → HTTPS 同源 JSON API → GPT Sites JavaScript Worker → PostgreSQL TCP（預設 5432）**。建置使用 Node.js 與 esbuild；Python FastAPI、Docker／Railway 為獨立參考路徑。瀏覽器 HTTPS 不代表資料庫連線也受相同保護；目標平台的原生 TCP 相容性未於本次重新驗證。
 
 [完整架構、API 與通訊說明](docs/SYSTEM_ARCHITECTURE.md) · [開啟 SVG 架構圖](docs/system-architecture.svg)
 
@@ -18,7 +18,7 @@ Repo 所記載的正式路徑：**HTML／CSS／JavaScript 瀏覽器前端 → HT
 
 | 頁面 | 功能 |
 |---|---|
-| 員工登入 | employee_code＋password、持續登入、登出 |
+| 員工登入 | employee_id＋password、持續登入、登出 |
 | 我的用車 | 個人摘要、下一趟行程 |
 | 我的申請 | 新增、修改、取消、刪單、搜尋及狀態篩選 |
 | 車輛預約 | 大家的預約、指定起迄查空車 |
@@ -66,18 +66,18 @@ npm run dev
 本機預覽 http://127.0.0.1:8770。初始員工密碼保存在被 Git 忽略的 `.local/員工登入資料.txt`；執行 provision-missing 只處理未設定密碼者，不覆寫既有密碼。重設指定員工：
 
 ```powershell
-python -m backend.employee_passwords --reset EMP0001
+python -m backend.employee_passwords --reset 1
 ```
 
 新密碼以互動輸入，不放入命令列。重設會撤銷該員工既有登入。Python API 對照版以 `uvicorn backend.main:app --host 127.0.0.1 --port 8767` 執行；內部建置 API 另受 SERVICE_API_KEY 保護，不是正式網站相依服務。
 
 ## 資料與登入
 
-PostgreSQL：140.117.68.35:5432，database／Maintenance DB／user 為 project_17，使用 fleetflow schema。DB_PASSWORD 只在本機 .env／Sites 秘密值保存。
+PostgreSQL：DB_HOST:5432，database 與使用者分別由 DB_NAME／DB_USER 設定，使用 fleetflow schema。DB_PASSWORD 只在本機 .env／Sites 秘密值保存。
 
-依作業需求，員工密碼在 employees.password **明碼保存**，不使用雜湊。一般查詢、登入回應及共享預約均不回傳密碼。員工身分取自伺服器 session；改網址或 body 中 employee_id 無法存取他人私有資料。大家的預約頁僅共享車牌、姓名、用途、起迄時間；電話與個人統計不共享。
+此為課程 demo，不適用真實帳號；正式使用前須強化密碼驗證及資料庫傳輸保護。一般查詢、登入回應及共享預約均不回傳密碼。員工身分取自伺服器 session；改網址或 body 中 employee_id 無法存取他人私有資料。大家的預約頁僅共享車牌、姓名、用途、起迄時間；電話與個人統計不共享。
 
-登入 session 最長 8 小時，使用 HttpOnly／SameSite=Strict Cookie，正式 HTTPS 加 Secure。登出及重設密碼撤銷 session；寫入需 CSRF token。同工號 15 分鐘內錯誤 5 次、同來源錯誤 30 次會限流。GPT Site 已設為 Public，任何取得連結者可開啟；系統資料仍需員工工號與密碼登入。
+登入 session 最長 8 小時，使用 HttpOnly／SameSite=Strict Cookie，正式 HTTPS 加 Secure。登出及重設密碼撤銷 session；寫入需 CSRF token。同員工編號 15 分鐘內錯誤 5 次、同來源錯誤 30 次會限流。GPT Site 已設為 Public，任何取得連結者可開啟；系統資料仍需員工編號與密碼登入。
 
 ## 驗證
 
@@ -94,10 +94,10 @@ python -m pytest -q
 
 [架構](docs/SYSTEM_ARCHITECTURE.md) · [功能](docs/PRODUCT_SPEC.md) · [資料庫](docs/DATABASE_SPEC.md) · [API](docs/API_SPEC.md) · [安全](docs/SECURITY_SPEC.md) · [部署](docs/DEPLOYMENT_SPEC.md) · [測試](docs/TEST_SPEC.md) · [Python OpenAPI](docs/openapi.json)
 
-尚無分頁、密碼找回或管理者介面。員工由建置工具建立；未設定密碼的員工不能登入。逾期未歸還不會自動延長原預約，直接 SQL 仍可繞過 API 業務檢查。此為課程 demo。
+尚無分頁、密碼找回或管理者介面。員工由建置工具建立；未設定密碼的員工不能登入。逾期未歸還不會自動延長原預約；營運資料應透過 API 操作。此為課程 demo。
 
-工號：`employees.employee_code` 為 UNIQUE 字串，格式 `EMP0001` 起，從 employee_id 產生（超過四碼不截斷）。登入只接受 employee_code＋password；數字流水號不能登入。employee_id 仍是內部 PK／FK，保留既有申請與派車關聯。工號不加 PK 底線。
+員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。
 
 「我的申請」集中顯示申請、車牌、使用期間、已預約／使用中／已歸還狀態與歸還操作。「申請用車」按鈕只出現在「我的申請」頁。
 
-示範車輛 DEMO-101～104 各有 2 筆保養、3 筆加油資料。`python -m backend.seed_vehicle_records` 只補入固定歷史日期的模擬資料，依車輛／日期略過既有紀錄，不更動車況、申請或員工。
+示範車輛可匯入保養與加油模擬資料。`python -m backend.seed_vehicle_records` 只補入固定歷史日期的模擬資料，依車輛／日期略過既有紀錄，不更動車況、申請或員工。

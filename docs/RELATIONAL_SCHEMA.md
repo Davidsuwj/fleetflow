@@ -11,7 +11,7 @@
 | 實體 | ERD 對應綱目 | 外鍵 |
 |---|---|---|
 | 部門 | (**department_id**, department_name) | — |
-| 員工 | (**employee_id**, employee_name, phone_number［多值］, password, employee_code, department_id) | department_id → 部門.department_id |
+| 員工 | (**employee_id**, employee_name, phone_number［多值］, password, department_id) | department_id → 部門.department_id |
 | 車輛 | (**vehicle_id**, license_plate, vehicle_model) | — |
 | 借用申請 | (**application_id**, purpose, requested_start_date, requested_end_date, approval_status, employee_id) | employee_id → 員工.employee_id |
 | 派車紀錄 | (**dispatch_id**, actual_start_date, actual_end_date, application_id, vehicle_id) | application_id → 借用申請.application_id，UNIQUE；vehicle_id → 車輛.vehicle_id |
@@ -22,6 +22,6 @@
 
 本圖保留 ERD 的多值電話表示，因此電話不是單一純量欄位的第一正規化實體表。實際 SQL 為支援多筆電話，另使用 employee_phones 輔助表，phone_id 為該輔助表代理鍵，phone_number 為一般欄位；這是實作轉換，未將額外電話編號畫入原 ERD 綱目。詳見 DATABASE_SPEC。
 
-主圖也不加入實作操作欄位 vehicle_status、created_at、returned_at 或 schema_migrations。員工新增 password 一般屬性（明碼），仍以 employee_id 為 PK；登入以工號及密碼驗證，不增加 accounts 或駕駛授權實體。auth_sessions／auth_login_limits 為實作支援表，不列入主圖。繪圖來源 scripts/render-relational-schema.py。
+主圖也不加入實作操作欄位 vehicle_status、created_at、returned_at 或 schema_migrations。員工新增 password 一般屬性，仍以 employee_id 為 PK；登入以員工編號及密碼驗證，不增加 accounts 或駕駛授權實體。auth_sessions／auth_login_limits 為實作支援表，不列入主圖。繪圖來源 scripts/render-relational-schema.py。
 
-工號：`employees.employee_code` 為 UNIQUE 字串，格式 `EMP0001` 起，從 employee_id 產生（超過四碼不截斷）。登入只接受 employee_code＋password；數字流水號不能登入。employee_id 仍是內部 PK／FK，保留既有申請與派車關聯。工號不加 PK 底線。
+員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。

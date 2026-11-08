@@ -23,7 +23,7 @@ async function saveEmployee(sql,body,value){
   await execute(sql,'DELETE FROM employee_phones WHERE employee_id=$1',[row.employee_id]);
   for(const phone of phone_numbers)await execute(sql,'INSERT INTO employee_phones(employee_id,phone_number) VALUES ($1,$2)',[row.employee_id,phone]);
   if(body.password)await execute(sql,'DELETE FROM auth_sessions WHERE employee_id=$1',[row.employee_id]);
-  delete row.password;return {...row,phone_numbers};
+  delete row.password;delete row.employee_code;return {...row,phone_numbers};
 }
 export async function handleApi(request,env,databaseFactory=openDatabase){
   const url=new URL(request.url),parts=url.pathname.split('/').filter(Boolean),resource=parts[1],action=parts[3],method=request.method;
@@ -123,7 +123,7 @@ export async function handleApi(request,env,databaseFactory=openDatabase){
   }catch(error){
     if(error instanceof ApiError)return Response.json({detail:error.message},{status:error.status});
     if(error.code==='23505')return Response.json({detail:({'maintenance_records_pkey':'同一輛車同一天只能有一筆保養紀錄。','refueling_records_pkey':'同一輛車同一天只能有一筆加油紀錄。'})[error.constraint_name]||'資料重複：車牌、名稱或派車申請已存在。'},{status:409});
-    if(error.code==='23503')return Response.json({detail:'關聯資料不存在，或此資料已有歷史紀錄，無法刪除。'},{status:409});
+    if(['23503','23001'].includes(error.code))return Response.json({detail:'關聯資料不存在，或此資料已有歷史紀錄，無法刪除。'},{status:409});
     if(error.code==='23514'||error.code==='22003')return Response.json({detail:'資料不符合資料庫限制，請檢查日期、數值及必填欄位。'},{status:409});
     console.error('FleetFlow database request failed',{code:error.code||error.name});
     return Response.json({detail:'資料庫暫時無法連線，請稍後再試。'},{status:503});

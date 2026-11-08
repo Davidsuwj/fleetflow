@@ -108,7 +108,7 @@ def edit_department(record_id:int,body:Department):
 @app.get('/api/employees')
 def employees():
     with connection() as c:
-        return c.execute("""SELECT e.employee_id,e.employee_code,e.employee_name,e.department_id,d.department_name,
+        return c.execute("""SELECT e.employee_id,e.employee_name,e.department_id,d.department_name,
             COALESCE((SELECT array_agg(p.phone_number ORDER BY p.phone_number) FROM employee_phones p
                       WHERE p.employee_id=e.employee_id), ARRAY[]::varchar[]) AS phone_numbers
             FROM employees e JOIN departments d USING(department_id)
@@ -121,6 +121,7 @@ def save_employee(c,body,record_id=None):
     for phone in body.phone_numbers:
         c.execute('INSERT INTO employee_phones(employee_id,phone_number) VALUES (%s,%s)',(row['employee_id'],phone))
     row.pop('password',None)
+    row.pop('employee_code',None)
     if body.password:
         c.execute('DELETE FROM auth_sessions WHERE employee_id=%s',(row['employee_id'],))
     return {**row,'phone_numbers':body.phone_numbers}

@@ -14,7 +14,10 @@ function loadAssets(){
   }
   return assets;
 }
-const port=Number(process.env.DEV_PORT||8770);
+// Managed preview passes --port; keep direct local development's existing default.
+const portArgument=process.argv.indexOf('--port');
+const port=Number(portArgument>=0?process.argv[portArgument+1]:(process.env.DEV_PORT||8770));
+if(!Number.isInteger(port)||port<1||port>65535)throw new Error('Invalid preview port');
 const origin='http://127.0.0.1:'+port;
 http.createServer(async(incoming,outgoing)=>{
   try{

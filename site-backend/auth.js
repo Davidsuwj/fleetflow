@@ -8,6 +8,15 @@ export async function verifyPassword(password,stored){
   let difference=actual.length^expected.length;for(let i=0;i<Math.max(actual.length,expected.length);i++)difference|=(actual[i]||0)^(expected[i]||0);
   return typeof stored==='string'&&stored.length>0&&difference===0;
 }
+export function normalizeEmployeeId(value){
+  if(typeof value==='string'&&/^(?:[0-9]{1,16}|EMP[0-9]{4,19})$/.test(value))value=Number(value.startsWith('EMP')?value.slice(3):value);
+  if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1)throw new ApiError(422,'請填寫有效的員工編號。');
+  return value;
+}
+export function validateLogin(body){
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['employee_id','employee_code','password'].includes(k))||('employee_id' in body&&'employee_code' in body)||typeof body.password!=='string'||body.password.length<1||body.password.length>128)throw new ApiError(422,'請填寫員工編號與密碼。');
+  return {...body,employee_id:normalizeEmployeeId(body.employee_id??body.employee_code)};
+}
 function cookie(request,token='',maxAge=28800){return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${new URL(request.url).protocol==='https:'?'; Secure':''}`;}
 function tokenFrom(request){const match=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)fleetflow_session=([a-f0-9]{64})(?:;|$)/);return match?.[1];}
 export async function requireSession(request,sql){
@@ -22,11 +31,10 @@ export async function requireSession(request,sql){
 export async function handleAuth(request,sql){
   const url=new URL(request.url),path=url.pathname,method=request.method;
   if(path==='/api/auth/login'&&method==='POST'){
-    const body=await readBody(request);
-    if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['employee_code','password'].includes(k))||typeof body.employee_code!=='string'||!/^EMP[0-9]{4,19}$/.test(body.employee_code)||typeof body.password!=='string'||body.password.length<1||body.password.length>128)throw new ApiError(422,'請填寫工號（例如 EMP0001）與密碼。');
-    const code=body.employee_code,ip=await digest(request.headers.get('CF-Connecting-IP')||'local');
+    const body=validateLogin(await readBody(request));
+    const employeeId=body.employee_id,ip=await digest(request.headers.get('CF-Connecting-IP')||'local');
     const outcome=await sql.begin(async tx=>{
-      const buckets=[`account:${code}`,`ip:${ip}`],limits=[];
+      const buckets=[`account:EMP${String(employeeId).padStart(4,'0')}`,`ip:${ip}`],limits=[];
       for(const key of buckets){
         await tx.unsafe('INSERT INTO auth_login_limits(bucket) VALUES($1) ON CONFLICT DO NOTHING',[key]);
         let row=(await tx.unsafe('SELECT * FROM auth_login_limits WHERE bucket=$1 FOR UPDATE',[key]))[0];
@@ -34,7 +42,7 @@ export async function handleAuth(request,sql){
         limits.push(row);
       }
       if(limits.some((r,i)=>r.attempts>=(i===0?5:30)))return {status:429};
-      const person=(await tx.unsafe('SELECT employee_id,employee_code,employee_name,password FROM employees WHERE employee_code=$1 FOR UPDATE',[code]))[0];
+      const person=(await tx.unsafe('SELECT employee_id,employee_name,password FROM employees WHERE employee_id=$1 FOR UPDATE',[employeeId]))[0];
       if(!await verifyPassword(body.password,person?.password)){
         await tx.unsafe('UPDATE auth_login_limits SET attempts=attempts+1 WHERE bucket=ANY($1::text[])',[buckets]);return {status:401};
       }
@@ -42,13 +50,13 @@ export async function handleAuth(request,sql){
       await tx.unsafe("DELETE FROM auth_sessions WHERE expires_at<=now()");
       const token=random(32),csrf=random(32);
       await tx.unsafe("INSERT INTO auth_sessions(session_hash,employee_id,csrf_token,expires_at) VALUES($1,$2,$3,now()+interval '8 hours')",[await digest(token),person.employee_id,csrf]);
-      return {token,csrf_token:csrf,employee:{employee_id:person.employee_id,employee_code:person.employee_code,employee_name:person.employee_name}};
+      return {token,csrf_token:csrf,employee:{employee_id:person.employee_id,employee_name:person.employee_name}};
     });
-    if(outcome.status)return Response.json({detail:outcome.status===429?'登入嘗試過多，請 15 分鐘後再試。':'工號或密碼錯誤。'},{status:outcome.status});
+    if(outcome.status)return Response.json({detail:outcome.status===429?'登入嘗試過多，請 15 分鐘後再試。':'員工編號或密碼錯誤。'},{status:outcome.status});
     return Response.json({employee:outcome.employee,csrf_token:outcome.csrf_token},{headers:{'Set-Cookie':cookie(request,outcome.token)}});
   }
   if(path==='/api/auth/session'&&method==='GET'){
-    const session=await requireSession(request,sql),person=(await sql.unsafe('SELECT employee_id,employee_code,employee_name FROM employees WHERE employee_id=$1',[session.employee_id]))[0];
+    const session=await requireSession(request,sql),person=(await sql.unsafe('SELECT employee_id,employee_name FROM employees WHERE employee_id=$1',[session.employee_id]))[0];
     return Response.json({employee:person,csrf_token:session.csrf_token});
   }
   if(path==='/api/auth/logout'&&method==='POST'){

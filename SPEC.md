@@ -12,7 +12,7 @@ Repo 所記載的正式路徑以 JavaScript 為 Worker 後端；前端以 HTTPS 
 
 | ID | 條件 |
 |---|---|
-| AC01 | 以 employee_code＋password 登入、登出，員工表含一般 password 明碼欄位 |
+| AC01 | 以 employee_id＋password 登入、登出，員工表含一般 password 欄位 |
 | AC02 | 個人申請、行程、電話及統計由 session 員工決定，無員工切換選單 |
 | AC03 | 新增／修改／刪單／取消／查詢／統計及歸還可用 |
 | AC04 | 有效未來時段在同一交易自動核准與派車，不需管理者 |

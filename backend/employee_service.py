@@ -68,7 +68,7 @@ def build_router(connection_factory, application_query, dispatch_query, require_
     def context(employee_id: int = Depends(require_employee)):
         with connection_factory() as c:
             c.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
-            person = c.execute('''SELECT e.employee_id,e.employee_code,e.employee_name,e.department_id,d.department_name,COALESCE((SELECT array_agg(p.phone_number ORDER BY p.phone_number) FROM employee_phones p WHERE p.employee_id=e.employee_id),ARRAY[]::varchar[]) AS phone_numbers
+            person = c.execute('''SELECT e.employee_id,e.employee_name,e.department_id,d.department_name,COALESCE((SELECT array_agg(p.phone_number ORDER BY p.phone_number) FROM employee_phones p WHERE p.employee_id=e.employee_id),ARRAY[]::varchar[]) AS phone_numbers
                 FROM employees e JOIN departments d USING(department_id) WHERE e.employee_id=%s''', (employee_id,)).fetchone()
             if not person:
                 raise HTTPException(404, '找不到指定員工。')

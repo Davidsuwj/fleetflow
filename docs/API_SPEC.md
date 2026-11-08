@@ -6,7 +6,7 @@
 
 | 方法 | 路徑 | 功能 |
 |---|---|---|
-| POST | /api/auth/login | employee_code＋password，設定登入 Cookie、回傳員工姓名／工號與 csrf_token |
+| POST | /api/auth/login | employee_id＋password，設定登入 Cookie、回傳員工姓名／員工編號與 csrf_token |
 | GET | /api/auth/session | 取得目前員工與 csrf_token |
 | POST | /api/auth/logout | 撤銷目前 session、清 Cookie |
 | GET | /api/employee-context | 本人資料、applications、dispatches、statistics；共享 vehicles、maintenance、refueling、team_bookings |
@@ -27,7 +27,7 @@ POST／PUT／DELETE 需 X-CSRF-Token；外站 Origin 403。Cookie 為 HttpOnly�
 
 ## 請求
 
-登入 JSON 為 employee_code（EMP 加至少四位數，例如 EMP0001）、password（1–128 字元）。數字 employee_id 不接受為登入帳號。一般查詢永不回傳 password；明碼僅存 employees.password。錯誤工號／密碼一律 401，同工號 15 分鐘錯 5 次、同來源錯 30 次後回傳 429。
+登入 JSON 使用 employee_id（1–9007199254740991 的整數員工編號，例如 1）與 password（1–128 字元）。數字字串亦可；舊 EMP0001 值或 employee_code 欄位僅作相容輸入，皆正規化至同一員工編號。不可同時傳入 employee_id 與 employee_code；格式錯誤或雙欄位輸入回傳 422。一般查詢永不回傳 password。錯誤員工編號／密碼一律 401，同員工編號 15 分鐘錯 5 次、同來源錯 30 次後回傳 429。
 
 申請 POST／PUT：employee_id、purpose、requested_start_date、requested_end_date；可選 vehicle_id 指定車，省略代表自動安排。body employee_id 必須等於 session。purpose 最多 500 字，時間需有效時區、起日在未來、迄日晚於起日。成功回傳 approved 申請、dispatch_id、license_plate、auto_approved=true；指定車已占用時 409。
 
@@ -53,4 +53,4 @@ maintenance 含 vehicle_id、maintenance_date、maintenance_item、maintenance_c
 
 所有業務值均使用參數化 SQL。查詢在 repeatable-read 唯讀交易；預約先鎖員工再鎖車輛，重查後同交易建立／修改申請及派車。取消及刪單僅處理本人未開始預約。失敗整筆 rollback，不回傳 SQL 或秘密。
 
-工號：`employees.employee_code` 為 UNIQUE 字串，格式 `EMP0001` 起，從 employee_id 產生（超過四碼不截斷）。登入只接受 employee_code＋password；數字流水號不能登入。employee_id 仍是內部 PK／FK，保留既有申請與派車關聯。工號不加 PK 底線。
+員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。

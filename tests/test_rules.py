@@ -40,7 +40,7 @@ def resources(client,admin_headers):
     d=client.post('/api/departments',headers=h,json={'department_name':'Test '+tag}).json()
     e=client.post('/api/employees',headers=h,json={'employee_name':'Test Employee','department_id':d['department_id'],
         'password':'test-password-2026','phone_numbers':['0911-000-000','0912-000-000','0911-000-000']}).json()
-    login=client.post('/api/auth/login',json={'employee_code':e['employee_code'],'password':'test-password-2026'})
+    login=client.post('/api/auth/login',json={'employee_id':e['employee_id'],'password':'test-password-2026'})
     assert login.status_code==200
     h={**h,'Cookie':login.headers['set-cookie'].split(';')[0],'X-CSRF-Token':login.json()['csrf_token']}
     v=client.post('/api/vehicles',headers=h,json={'license_plate':'TEST-'+tag,'vehicle_model':'Rolls-Royce Cullinan 6.75 V12'}).json()
@@ -229,10 +229,10 @@ def test_employee_session_security_logout_and_expiry(client,resources,test_db):
     assert client.get('/api/employee-context',headers={'Cookie':''}).status_code==401
     assert client.get('/api/employee-context?employee_id=999999999',headers=h).status_code==403
     assert client.post('/api/my-applications',headers={'Cookie':h['Cookie']},json=future_employee_body(r)).status_code==403
-    assert client.post('/api/auth/login',json={'employee_code':r['employee']['employee_code'],'password':'wrong'}).status_code==401
+    assert client.post('/api/auth/login',json={'employee_id':r['employee']['employee_id'],'password':'wrong'}).status_code==401
     assert client.post('/api/auth/logout',headers=h).status_code==200
     assert client.get('/api/employee-context',headers=h).status_code==401
-    login=client.post('/api/auth/login',json={'employee_code':r['employee']['employee_code'],'password':'test-password-2026'})
+    login=client.post('/api/auth/login',json={'employee_id':r['employee']['employee_id'],'password':'test-password-2026'})
     assert login.status_code==200 and 'password' not in login.json()['employee']
     assert 'HttpOnly' in login.headers['set-cookie'] and 'SameSite=strict' in login.headers['set-cookie']
     with test_db() as c:
@@ -242,32 +242,45 @@ def test_employee_session_security_logout_and_expiry(client,resources,test_db):
 def test_employee_failed_login_rate_limit(client,resources):
     r=resources
     for _ in range(5):
-        assert client.post('/api/auth/login',json={'employee_code':r['employee']['employee_code'],'password':'wrong'}).status_code==401
-    assert client.post('/api/auth/login',json={'employee_code':r['employee']['employee_code'],'password':'test-password-2026'}).status_code==429
+        assert client.post('/api/auth/login',json={'employee_id':r['employee']['employee_id'],'password':'wrong'}).status_code==401
+    assert client.post('/api/auth/login',json={'employee_id':r['employee']['employee_id'],'password':'test-password-2026'}).status_code==429
 
-def test_employee_code_migration_preserves_existing_records(client,resources,test_db):
+def test_employee_identity_migration_preserves_existing_records(client,resources,test_db):
     r=resources
-    assert r['employee']['employee_code'].startswith('EMP')
-    assert client.post('/api/auth/login',json={'employee_id':r['employee']['employee_id'],'password':'test-password-2026'}).status_code==422
-    assert client.post('/api/auth/login',json={'employee_code':str(r['employee']['employee_id']),'password':'test-password-2026'}).status_code==422
+    assert 'employee_code' not in r['employee']
     with test_db() as c:
         schema=c.execute('SELECT current_schema() AS s').fetchone()['s']
         assert schema.startswith('fleetflow_test_')
-        before=c.execute('SELECT employee_id,password FROM employees ORDER BY employee_id').fetchall()
-        applications=c.execute('SELECT application_id,employee_id FROM applications ORDER BY application_id').fetchall()
-        c.execute('ALTER TABLE employees DROP COLUMN employee_code')
+        tables=['employees','employee_phones','applications','dispatches','auth_sessions']
+        before={table:c.execute(f'SELECT * FROM {table} ORDER BY 1').fetchall() for table in tables}
         c.execute((ROOT/'backend/migrations/006_employee_codes.sql').read_text(encoding='utf-8').replace('fleetflow',schema))
-        assert c.execute('SELECT employee_id,password FROM employees ORDER BY employee_id').fetchall()==before
-        assert c.execute('SELECT application_id,employee_id FROM applications ORDER BY application_id').fetchall()==applications
-        code=c.execute('INSERT INTO employees(employee_id,department_id,employee_name) VALUES(10000,%s,%s) RETURNING employee_code',(r['department']['department_id'],'Code test')).fetchone()['employee_code']
-        assert code=='EMP10000'
+        migration=(ROOT/'backend/migrations/007_unify_employee_identity.sql').read_text(encoding='utf-8').replace('fleetflow',schema)
+        c.execute(migration)
+        c.execute(migration)  # idempotent even when the column has already gone
+        for table in tables:
+            assert c.execute(f'SELECT * FROM {table} ORDER BY 1').fetchall()==before[table]
+    assert client.get('/api/auth/session',headers=r['headers']).status_code==200
+    for key,value in [('employee_id',r['employee']['employee_id']),('employee_id',str(r['employee']['employee_id'])),('employee_code',f"EMP{r['employee']['employee_id']:04d}")]:
+        assert client.post('/api/auth/login',json={key:value,'password':'test-password-2026'}).status_code==200
+
+def test_employee_identity_migration_aborts_on_custom_code(test_db):
+    import psycopg
+    with test_db() as c:
+        schema=c.execute('SELECT current_schema() AS s').fetchone()['s']
+        # A nested transaction rolls back the entire artificial legacy shape.
+        with pytest.raises(psycopg.errors.RaiseException):
+            with c.transaction():
+                c.execute('ALTER TABLE employees ADD COLUMN employee_code varchar(32)')
+                c.execute("UPDATE employees SET employee_code='custom-code'")
+                c.execute((ROOT/'backend/migrations/007_unify_employee_identity.sql').read_text(encoding='utf-8').replace('fleetflow',schema))
+        assert not c.execute("SELECT 1 FROM information_schema.columns WHERE table_schema=%s AND table_name='employees' AND column_name='employee_code'",(schema,)).fetchone()
 
 def test_employee_shared_availability_and_preferred_car(client,resources):
     from urllib.parse import urlencode
     r=resources;h=r['headers'];body={**future_employee_body(r),'vehicle_id':r['vehicle']['vehicle_id']}
     first=client.post(employee_path(r),headers=h,json=body);assert first.status_code==201
     other=client.post('/api/employees',headers=h,json={'department_id':r['department']['department_id'],'employee_name':'Other','password':'other-test-password'}).json()
-    login=client.post('/api/auth/login',json={'employee_code':other['employee_code'],'password':'other-test-password'})
+    login=client.post('/api/auth/login',json={'employee_id':other['employee_id'],'password':'other-test-password'})
     other_h={**h,'Cookie':login.headers['set-cookie'].split(';')[0],'X-CSRF-Token':login.json()['csrf_token']}
     query='/api/availability?'+urlencode({'start':body['requested_start_date'],'end':body['requested_end_date']})
     data=client.get(query,headers=other_h).json()
@@ -286,7 +299,7 @@ def test_employee_shared_availability_and_preferred_car(client,resources):
 def test_employee_concurrent_preferred_car(client,resources):
     from concurrent.futures import ThreadPoolExecutor
     r=resources;h=r['headers'];other=client.post('/api/employees',headers=h,json={'department_id':r['department']['department_id'],'employee_name':'Race','password':'race-test-password'}).json()
-    login=client.post('/api/auth/login',json={'employee_code':other['employee_code'],'password':'race-test-password'})
+    login=client.post('/api/auth/login',json={'employee_id':other['employee_id'],'password':'race-test-password'})
     other_h={**h,'Cookie':login.headers['set-cookie'].split(';')[0],'X-CSRF-Token':login.json()['csrf_token']}
     start=datetime.now(timezone.utc)+timedelta(days=60)
     body={**r['app_body'],'vehicle_id':r['vehicle']['vehicle_id'],'requested_start_date':start.isoformat(),'requested_end_date':(start+timedelta(hours=2)).isoformat()}
@@ -295,3 +308,23 @@ def test_employee_concurrent_preferred_car(client,resources):
         return client.post('/api/my-applications',headers=headers,json={**body,'employee_id':employee}).status_code
     with ThreadPoolExecutor(max_workers=2) as pool:
         assert sorted(pool.map(send,[(h,r['employee']['employee_id']),(other_h,other['employee_id'])]))==[201,409]
+
+
+def test_employee_identity_api_before_column_removal(client,resources,test_db):
+    r=resources
+    with test_db() as c:
+        schema=c.execute('SELECT current_schema() AS s').fetchone()['s']
+        c.execute((ROOT/'backend/migrations/006_employee_codes.sql').read_text().replace('fleetflow',schema))
+    try:
+        body={'employee_name':'Compatibility','department_id':r['department']['department_id'],'password':'test-password-2026'}
+        created=client.post('/api/employees',headers=r['headers'],json=body)
+        assert created.status_code==201 and 'employee_code' not in created.json()
+        changed=client.put(f"/api/employees/{created.json()['employee_id']}",headers=r['headers'],json=body)
+        assert changed.status_code==200 and 'employee_code' not in changed.json()
+        login=client.post('/api/auth/login',json={'employee_code':f"EMP{created.json()['employee_id']:04d}",'password':'test-password-2026'})
+        assert login.status_code==200 and 'employee_code' not in login.json()['employee']
+        assert 'employee_code' not in client.get('/api/auth/session').json()['employee']
+        assert 'employee_code' not in client.get('/api/employee-context').json()['employee']
+    finally:
+        with test_db() as c:
+            c.execute((ROOT/'backend/migrations/007_unify_employee_identity.sql').read_text().replace('fleetflow',schema))

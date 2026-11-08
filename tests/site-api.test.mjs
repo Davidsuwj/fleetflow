@@ -29,7 +29,7 @@ async function resources(){
   const tag=randomBytes(4).toString('hex');
   const department=await api('departments','POST',{department_name:'Test '+tag});assert.equal(department.status,201);
   const employee=await api('employees','POST',{department_id:department.data.department_id,employee_name:'Test Employee',password:TEST_PASSWORD,phone_numbers:['0911000000','0912000000','0911000000']});assert.equal(employee.status,201);
-  const login=await api('auth/login','POST',{employee_code:employee.data.employee_code,password:TEST_PASSWORD},null);assert.equal(login.status,200);lastSession={Cookie:login.cookie.split(';')[0],'X-CSRF-Token':login.data.csrf_token};sessions.set(employee.data.employee_id,lastSession);
+  const login=await api('auth/login','POST',{employee_id:employee.data.employee_id,password:TEST_PASSWORD},null);assert.equal(login.status,200);lastSession={Cookie:login.cookie.split(';')[0],'X-CSRF-Token':login.data.csrf_token};sessions.set(employee.data.employee_id,lastSession);
   const vehicle=await api('vehicles','POST',{license_plate:'TEST-'+tag});assert.equal(vehicle.status,201);
   const start=new Date(Date.now()-3600000).toISOString(),end=new Date(Date.now()+7200000).toISOString();
   const applicationBody={employee_id:employee.data.employee_id,purpose:'Integration test',requested_start_date:start,requested_end_date:end};
@@ -204,35 +204,35 @@ test('concurrent automatic requests from one employee cannot overlap even with m
 
 test('employee login, session isolation, CSRF, logout and expiry',async()=>{
   const r=await resources(),other=await resources(),auth=sessions.get(r.employee.employee_id);
-  assert.match(r.employee.employee_code,/^EMP[0-9]{4,19}$/);
-  assert.equal((await api('auth/login','POST',{employee_id:r.employee.employee_id,password:TEST_PASSWORD},null)).status,422);
-  assert.equal((await api('auth/login','POST',{employee_code:String(r.employee.employee_id),password:TEST_PASSWORD},null)).status,422);
+  assert.equal('employee_code' in r.employee,false);
+  assert.equal((await api('auth/login','POST',{employee_id:r.employee.employee_id,password:TEST_PASSWORD},null)).status,200);
+  assert.equal((await api('auth/login','POST',{employee_code:'EMP'+String(r.employee.employee_id).padStart(4,'0'),password:TEST_PASSWORD},null)).status,200);
   assert.equal((await api('employee-context','GET',undefined,null)).status,401);
   assert.equal((await api(`employee-context?employee_id=${other.employee.employee_id}`,'GET',undefined,auth)).status,403);
   assert.equal((await api('my-applications','POST',futureBody(r),{Cookie:auth.Cookie})).status,403);
-  assert.equal((await api('auth/login','POST',{employee_code:r.employee.employee_code,password:'wrong'},null)).status,401);
+  assert.equal((await api('auth/login','POST',{employee_id:r.employee.employee_id,password:'wrong'},null)).status,401);
   const me=await api('employee-context','GET',undefined,auth);assert.equal(me.status,200);assert.equal('password' in me.data.employee,false);
   const logout=await api('auth/logout','POST',undefined,auth);assert.equal(logout.status,200);assert.match(logout.cookie,/Max-Age=0/);
   assert.equal((await api('employee-context','GET',undefined,auth)).status,401);
-  const login=await api('auth/login','POST',{employee_code:r.employee.employee_code,password:TEST_PASSWORD},null);assert.equal(login.status,200);assert.match(login.cookie,/HttpOnly/);assert.match(login.cookie,/Secure/);assert.match(login.cookie,/SameSite=Strict/);assert.equal('password' in login.data.employee,false);
+  const login=await api('auth/login','POST',{employee_id:r.employee.employee_id,password:TEST_PASSWORD},null);assert.equal(login.status,200);assert.match(login.cookie,/HttpOnly/);assert.match(login.cookie,/Secure/);assert.match(login.cookie,/SameSite=Strict/);assert.equal('password' in login.data.employee,false);
   const sql=openDatabase(env,schema);try{await sql.unsafe("UPDATE auth_sessions SET expires_at=now()-interval '1 second' WHERE employee_id=$1",[r.employee.employee_id]);}finally{await sql.end({timeout:1});}
   assert.equal((await api('auth/session','GET',undefined,{Cookie:login.cookie.split(';')[0]})).status,401);
 });
 
-test('employee codes stay unique without truncating ids above four digits',async()=>{
+test('legacy login aliases work without a database code column',async()=>{
   const r=await resources(),sql=openDatabase(env,schema);
   try{
-    const rows=await sql.unsafe("INSERT INTO employees(employee_id,department_id,employee_name,password) VALUES(10000,$1,'Code test',$2) RETURNING employee_code",[r.department.department_id,TEST_PASSWORD]);
-    assert.equal(rows[0].employee_code,'EMP10000');
+    const rows=await sql.unsafe("INSERT INTO employees(employee_id,department_id,employee_name,password) VALUES(10000,$1,'Code test',$2) RETURNING employee_id",[r.department.department_id,TEST_PASSWORD]);
+    assert.equal(rows[0].employee_id,10000);
     assert.equal((await api('auth/login','POST',{employee_code:'EMP10000',password:TEST_PASSWORD},null)).status,200);
-    assert.equal((await api('auth/login','POST',{employee_code:'EMP0000',password:TEST_PASSWORD},null)).status,401);
+    assert.equal((await api('auth/login','POST',{employee_code:'EMP0000',password:TEST_PASSWORD},null)).status,422);
   }finally{await sql.end({timeout:1});}
 });
 
 test('invalid employee login attempts persist and are throttled',async()=>{
   const r=await resources();
-  for(let i=0;i<5;i++)assert.equal((await api('auth/login','POST',{employee_code:r.employee.employee_code,password:'wrong'},null)).status,401);
-  assert.equal((await api('auth/login','POST',{employee_code:r.employee.employee_code,password:TEST_PASSWORD},null)).status,429);
+  for(let i=0;i<5;i++)assert.equal((await api('auth/login','POST',{employee_id:i%2?r.employee.employee_id:'EMP'+String(r.employee.employee_id).padStart(4,'0'),password:'wrong'},null)).status,401);
+  assert.equal((await api('auth/login','POST',{employee_id:r.employee.employee_id,password:TEST_PASSWORD},null)).status,429);
   assert.equal((await api('auth/login','POST',{employee_code:'EMP999999999',password:'wrong'},null)).status,401);
 });
 
@@ -254,4 +254,24 @@ test('two authenticated employees cannot reserve the same preferred car concurre
   const r=await resources(),other=await resources(),body={...futureBody(r),vehicle_id:r.vehicle.vehicle_id,requested_start_date:new Date(Date.now()+60*86400000).toISOString(),requested_end_date:new Date(Date.now()+60*86400000+7200000).toISOString()};
   const results=await Promise.all([api(personal('my-applications',r.employee.employee_id),'POST',body),api(personal('my-applications',other.employee.employee_id),'POST',{...body,employee_id:other.employee.employee_id})]);
   assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);
+});
+
+
+test('pre-migration legacy column does not leak into canonical API responses',async()=>{
+  const sql=openDatabase(env,schema);
+  try{
+    await sql.unsafe(fs.readFileSync('backend/migrations/006_employee_codes.sql','utf8').replaceAll('fleetflow',schema)).simple();
+    const r=await resources();
+    assert.equal('employee_code' in r.employee,false);
+    const changed=await api('employees/'+r.employee.employee_id,'PUT',{department_id:r.department.department_id,employee_name:'Unified',phone_numbers:[]});
+    assert.equal(changed.status,200);assert.equal('employee_code' in changed.data,false);
+    const login=await api('auth/login','POST',{employee_code:'EMP'+String(r.employee.employee_id).padStart(4,'0'),password:TEST_PASSWORD},null);
+    assert.equal(login.status,200);assert.equal('employee_code' in login.data.employee,false);
+    const me=await api('auth/session','GET',undefined,{Cookie:login.cookie.split(';')[0]});
+    assert.equal(me.status,200);assert.equal('employee_code' in me.data.employee,false);
+    const context=await api('employee-context');assert.equal(context.status,200);assert.equal('employee_code' in context.data.employee,false);
+  }finally{
+    await sql.begin(tx=>tx.unsafe(fs.readFileSync('backend/migrations/007_unify_employee_identity.sql','utf8').replaceAll('fleetflow',schema)).simple());
+    await sql.end({timeout:1});
+  }
 });

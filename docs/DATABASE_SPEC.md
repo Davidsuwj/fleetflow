@@ -2,9 +2,9 @@
 
 ## 連線與隔離
 
-PostgreSQL，host `140.117.68.35`，port `5432`，database／Maintenance DB `project_17`，user `project_17`。密碼只透過環境變數提供。所有新物件置於 `fleetflow` schema，既有 `public`、`ghatcpt`、`ghatcpt_meta` 不修改。
+PostgreSQL，host `DB_HOST`，port `5432`，database／Maintenance DB `DB_NAME`，user `DB_USER`。密碼只透過環境變數提供。所有新物件置於 `fleetflow` schema，其他既有 schema 不修改。
 
-`backend/schema.sql` 為初版 schema 建置腳本。Python 建置工具使用 transaction 與 advisory lock 執行可重入的初版初始化，並在 schema_migrations 登記版本 1。migration 002 已移除開發版 accounts 表，登記版本 2；003 改用 phone_id 作電話子表主鍵，原資料保留。004 將保養／加油改為車輛＋日期複合 PK，移除舊序號／編號；在同一交易鎖表及檢查重複，若有同車同日重複則整筆 rollback，要求先明確整理，不自動刪除或合併紀錄。005 增加 employees.password 明碼欄位，以及 auth_sessions、auth_login_limits 支援登入；未設定密碼不能登入，建置工具補設且不改既有密碼。未來版本必須新增 migration；`CREATE TABLE IF NOT EXISTS` 不會自動修改既有欄位。
+`backend/schema.sql` 為初版 schema 建置腳本。Python 建置工具使用 transaction 與 advisory lock 執行可重入的初版初始化，並在 schema_migrations 登記版本 1。migration 002 已移除開發版 accounts 表，登記版本 2；003 改用 phone_id 作電話子表主鍵，原資料保留。004 將保養／加油改為車輛＋日期複合 PK，移除舊序號／編號；在同一交易鎖表及檢查重複，若有同車同日重複則整筆 rollback，要求先明確整理，不自動刪除或合併紀錄。005 增加 employees.password 欄位，以及 auth_sessions、auth_login_limits 支援登入；未設定密碼不能登入，建置工具補設且不改既有密碼。未來版本必須新增 migration；`CREATE TABLE IF NOT EXISTS` 不會自動修改既有欄位。
 
 ## ERD 與關係映射
 
@@ -34,10 +34,9 @@ PostgreSQL，host `140.117.68.35`，port `5432`，database／Maintenance DB `pro
 | 欄位 | 型別 | 限制 | 中文 |
 |---|---|---|---|
 | employee_id | bigint identity | PK | 員工編號 |
-| employee_code | varchar(32) generated stored | UNIQUE，EMP 加至少四位數 | 登入工號 |
 | department_id | bigint | NOT NULL、FK departments、RESTRICT | 部門編號 |
 | employee_name | varchar(80) | NOT NULL、非空白 | 姓名 |
-| password | varchar(128) | 一般欄位、明碼；未設定不可登入；API 設定需 8–128 字元 | 密碼 |
+| password | varchar(128) | 一般欄位；未設定不可登入；API 設定需 8–128 字元 | 密碼 |
 
 ### employee_phones（多值電話）
 
@@ -116,7 +115,7 @@ UNIQUE(employee_id, phone_number) 避免同一員工重複電話，唯一限制�
 
 保養與加油均以 (vehicle_id, date) 複合 PK 保證同車同日各一筆；日期不能單獨識別不同車輛的紀錄。保養寫入先鎖車輛，兩者的併發同鍵寫入由 PostgreSQL 唯一限制拒絕，API 回傳 409。同一天不同車、同車不同天都允許；不存在額外保養序號或加油編號。
 
-跨列的派車衝突、核准狀態在 API 交易內維護；資料庫有 FK、UNIQUE 和 CHECK，但沒有 exclusion constraint／trigger 防止直接 SQL 繞過業務規則。營運資料應由 API 寫入。使用共享課程帳號時，其他直接 SQL 使用者仍有修改資料的能力。
+跨列的派車衝突與核准狀態由 API 交易維護，資料庫搭配 FK、UNIQUE 和 CHECK。營運資料應透過 API 操作，以遵守業務規則；部署權限應由維運人員管理並採最小權限。
 
 ## 正式執行環境
 
@@ -129,10 +128,10 @@ GPT Sites Worker 使用 Postgres.js TCP 驅動直接連線；Python 參考版使
 | auth_sessions | session_hash varchar(64) PK、employee_id FK CASCADE、csrf_token varchar(64)、expires_at timestamptz、created_at timestamptz default now() |
 | auth_login_limits | bucket varchar(80) PK、attempts integer >=0 default 0、window_start timestamptz default now() |
 
-session_hash 保存隨機 token 摘要，員工 password 本身不做雜湊。索引為 sessions_employee／sessions_expiry。登入錯誤計數交易後保留；15 分鐘重置窗口，員工 5 次／來源 30 次錯誤限流。登入工作階段最長 8 小時，登出／重設撤銷。
+session_hash 保存隨機 token 摘要；這與員工密碼驗證是不同機制。索引為 sessions_employee／sessions_expiry。登入錯誤計數交易後保留；15 分鐘重置窗口，員工 5 次／來源 30 次錯誤限流。登入工作階段最長 8 小時，登出／重設撤銷。
 
 共享預約是既有派車、申請、員工、車輛 JOIN 結果，不增加資料表。可借判定及送出均使用 [起,迄) 重疊邏輯；送出在鎖定車輛後重新驗證，不依賴前端查詢結果。
 
-工號：`employees.employee_code` 為 UNIQUE 字串，格式 `EMP0001` 起，從 employee_id 產生（超過四碼不截斷）。登入只接受 employee_code＋password；數字流水號不能登入。employee_id 仍是內部 PK／FK，保留既有申請與派車關聯。工號不加 PK 底線。
+員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。
 
-Migration 006 新增 employee_code 產生欄位及 UNIQUE 索引，既有 employee_id、password 與所有外鍵資料不改動；可重複執行。
+歷史 migration 006 曾新增 employee_code 產生欄位及 UNIQUE 索引。新版 migration 007 驗證舊欄位為預期的衍生資料後移除，不重編 employee_id，不改密碼、session 或外鍵；遇到非預期資料即中止並 rollback。可重複執行；實際執行結果見[部署紀錄](DEPLOYMENT_SPEC.md#正式資料庫整併完成2026-11-08)。

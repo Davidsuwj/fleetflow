@@ -22,7 +22,7 @@ flowchart LR
         Router -->|"/api/*：JSON"| API
         API --> Driver
     end
-    DB[("PostgreSQL<br/>database: project_17<br/>schema: fleetflow")]
+    DB[("PostgreSQL<br/>database: DB_NAME<br/>schema: fleetflow")]
     Browser <-->|"HTTPS :443 / 同源 fetch"| Router
     Driver <-->|"PostgreSQL wire protocol / TCP :5432"| DB
 ```
@@ -41,7 +41,7 @@ flowchart LR
 | 瀏覽器前端 | HTML、CSS、原生 JavaScript | 頁面、樣式、DOM 操作、hash 導覽與 `fetch`；[`dist/index.html`](../dist/index.html)、[`dist/style.css`](../dist/style.css)、[`dist/app.js`](../dist/app.js)。未使用 React、Vue 或 TypeScript。 |
 | 正式 API | JavaScript ES modules、Fetch API、GPT Sites Worker | 路由與回應：[`worker.js`](../worker.js)；登入、員工業務與 SQL：[`site-backend/`](../site-backend/)。不是 FastAPI 或 Express。 |
 | 資料存取 | JavaScript + SQL、Postgres.js | [`site-backend/db.js`](../site-backend/db.js) 建立 PostgreSQL 連線；預約使用交易、員工／車輛 row lock 與衝突重查。 |
-| 資料庫 | PostgreSQL、SQL | `project_17` database 的 `fleetflow` schema；結構與 migration：[`backend/schema.sql`](../backend/schema.sql)、[`backend/migrations/`](../backend/migrations/)。資料庫伺服器版本未在 repo 指定。 |
+| 資料庫 | PostgreSQL、SQL | `DB_NAME` database 的 `fleetflow` schema；結構與 migration：[`backend/schema.sql`](../backend/schema.sql)、[`backend/migrations/`](../backend/migrations/)。資料庫伺服器版本未在 repo 指定。 |
 | 建置／本機預覽 | Node.js 22+、JavaScript、esbuild | `npm run build` 封裝 Worker；`npm run dev` 以 Node HTTP server 執行同一份 Worker/API 原始碼。Node.js 是本機與建置工具，不是正式站的常駐伺服器。 |
 | Python 工具／參考 API | Python 3.11+、FastAPI、Uvicorn、psycopg、Pydantic | [`backend/`](../backend/) 包含 migration、示範資料、密碼初始化及對照 API；依賴版本見 [`requirements.txt`](../requirements.txt)。 |
 
@@ -53,7 +53,7 @@ flowchart LR
 
 | 方法 | 路徑 | 用途／驗證 |
 |---|---|---|
-| POST | `/api/auth/login` | 工號與密碼登入；成功設定 session cookie，回傳員工資訊與 CSRF token。 |
+| POST | `/api/auth/login` | 員工編號與密碼登入；成功設定 session cookie，回傳員工資訊與 CSRF token。 |
 | GET / POST | `/api/auth/session` / `/api/auth/logout` | 查目前登入狀態／登出；登出需 CSRF token。 |
 | GET | `/api/employee-context` | 登入員工的個人資料、申請、行程、統計，以及共享預約與車輛紀錄。 |
 | GET / POST | `/api/my-applications` | 查本人申請／建立申請；建立時在同一交易自動核准及派車。 |
@@ -71,7 +71,7 @@ sequenceDiagram
     participant W as GPT Sites Worker API
     participant D as PostgreSQL
     B->>W: HTTPS POST /api/auth/login（JSON）
-    W->>D: TCP：驗證工號與密碼，建立 session
+    W->>D: TCP：驗證員工編號與密碼，建立 session
     D-->>W: 員工／session 資料
     W-->>B: HttpOnly Cookie + JSON CSRF token
     B->>W: HTTPS POST /api/my-applications（Cookie + X-CSRF-Token）
@@ -86,7 +86,7 @@ sequenceDiagram
     end
 ```
 
-session cookie 使用 `HttpOnly`、`SameSite=Strict`，HTTPS 時加 `Secure`，最長 8 小時。資料庫保存 session token 的 SHA-256 摘要。**員工密碼仍依課程 demo 需求明碼儲存，不能宣稱已雜湊**；詳見[安全規格](SECURITY_SPEC.md)。
+session cookie 使用 `HttpOnly`、`SameSite=Strict`，HTTPS 時加 `Secure`，最長 8 小時。資料庫保存 session token 的 SHA-256 摘要。**本專案僅供課程 demo，不適用真實帳號；正式使用前須強化密碼驗證與傳輸保護**；詳見[安全規格](SECURITY_SPEC.md)。
 
 ## 4. HTTP、TCP 與 TLS
 
@@ -98,13 +98,10 @@ session cookie 使用 `HttpOnly`、`SameSite=Strict`，HTTPS 時加 `Secure`，�
 | 本機 Node／Python ↔ PostgreSQL | PostgreSQL over TCP，預設 5432 | 分別使用 Postgres.js／psycopg。主機、帳號、密碼由環境設定提供。 |
 | Python 參考 API | 本機例子 HTTP `127.0.0.1:8767`；容器預設 `0.0.0.0:8080` | Uvicorn 對外監聽埠由 `PORT` 決定，HTTP 與資料庫 TCP 連線是兩個不同層次。 |
 
-### 資料庫 TLS 現況
+### 資料庫傳輸保護
 
-[`docs/DEPLOYMENT_SPEC.md`](DEPLOYMENT_SPEC.md) 記載正式站目前 `DB_SSLMODE=disable`。JavaScript 驅動實作只有在值**恰為 `require`** 時啟用 TLS，其他值皆為 `false`，因此不能將目前的 Worker → DB 連線畫成已加密。
+資料庫端點、使用者與連線設定由部署環境提供，不記錄於公開文件。瀏覽器 HTTPS 不會自動保護 Worker 到資料庫這一段；正式使用前須分別驗證驅動相容性、伺服器憑證與傳輸保護。本專案為課程 demo，此說明不代表已完成正式環境安全強化。
 
-- 瀏覽器的 HTTPS **不會**自動保護 Worker 到資料庫這一段。
-- `.env.example` 的 `prefer` 對 Python psycopg 有意義，但在目前 JavaScript 實作仍代表不啟用 TLS。
-- 待資料庫支援 TLS 並驗證相容後，才可將 Worker 的 `DB_SSLMODE` 設為 `require`。這是改善建議，本文件未修改任何線上設定。
 - 連線逾時 8 秒、SQL statement timeout 12 秒；每個 Postgres.js client 的 `max=1`，不是整個網站僅有一條連線。請求處理完成後關閉對應 client。來源：[`site-backend/db.js`](../site-backend/db.js)、[`site-backend/api.js`](../site-backend/api.js)、[`site-backend/employee-api.js`](../site-backend/employee-api.js)。
 
 ## 5. 建置與部署

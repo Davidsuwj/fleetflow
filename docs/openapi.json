@@ -2134,11 +2134,11 @@
       },
       "Login": {
         "properties": {
-          "employee_code": {
-            "type": "string",
-            "maxLength": 22,
-            "pattern": "^EMP[0-9]{4,19}$",
-            "title": "Employee Code"
+          "employee_id": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": 1.0,
+            "title": "Employee Id"
           },
           "password": {
             "type": "string",
@@ -2150,7 +2150,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "employee_code",
+          "employee_id",
           "password"
         ],
         "title": "Login"

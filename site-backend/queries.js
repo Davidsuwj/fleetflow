@@ -1,6 +1,6 @@
 export const queries={
   "employees": [
-    "SELECT e.employee_id,e.employee_code,e.employee_name,e.department_id,d.department_name,\n            COALESCE((SELECT array_agg(p.phone_number ORDER BY p.phone_number) FROM employee_phones p\n                      WHERE p.employee_id=e.employee_id), ARRAY[]::varchar[]) AS phone_numbers\n            FROM employees e JOIN departments d USING(department_id)\n            ORDER BY e.employee_id"
+    "SELECT e.employee_id,e.employee_name,e.department_id,d.department_name,\n            COALESCE((SELECT array_agg(p.phone_number ORDER BY p.phone_number) FROM employee_phones p\n                      WHERE p.employee_id=e.employee_id), ARRAY[]::varchar[]) AS phone_numbers\n            FROM employees e JOIN departments d USING(department_id)\n            ORDER BY e.employee_id"
   ],
   "vehicles": [
     "SELECT v.*, EXISTS(SELECT 1 FROM dispatches d WHERE d.vehicle_id=v.vehicle_id\n            AND d.returned_at IS NULL AND now() >= d.actual_start_date AND now() < d.actual_end_date) AS in_use\n            FROM vehicles v ORDER BY vehicle_id"

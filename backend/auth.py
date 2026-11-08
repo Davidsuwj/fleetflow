@@ -3,16 +3,43 @@ import hashlib
 import hmac
 import secrets
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 COOKIE='fleetflow_session'
 def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
+def normalize_employee_id(value):
+    # Match the safe-integer range used throughout the Sites API.
+    import re
+    if type(value) is int:
+        employee_id=value
+    elif isinstance(value,str) and re.fullmatch(r'(?:[0-9]{1,16}|EMP[0-9]{4,19})',value):
+        employee_id=int(value[3:] if value.startswith('EMP') else value)
+    else:
+        raise ValueError('請填寫員工編號。')
+    if not 1<=employee_id<=9007199254740991:
+        raise ValueError('員工編號超出有效範圍。')
+    return employee_id
+
 class Login(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    employee_code: str=Field(pattern=r'^EMP[0-9]{4,19}$',max_length=22)
+    employee_id: int=Field(ge=1,le=9007199254740991)
     password: str=Field(min_length=1,max_length=128)
+
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_identity(cls,data):
+        if not isinstance(data,dict):
+            return data
+        data=dict(data)
+        # Legacy field is input-only. Reject ambiguous dual identifiers.
+        if 'employee_code' in data:
+            if 'employee_id' in data:
+                raise ValueError('請只提供一個員工編號。')
+            data['employee_id']=data.pop('employee_code')
+        data['employee_id']=normalize_employee_id(data.get('employee_id'))
+        return data
 
 def build_auth(connection_factory):
     router=APIRouter(prefix='/api/auth',tags=['員工登入'])
@@ -41,7 +68,7 @@ def build_auth(connection_factory):
             raise HTTPException(403,'請在此網站內操作。')
         status=None
         with connection_factory() as c:
-            buckets=[f'account:{body.employee_code}','ip:'+digest(request.headers.get('cf-connecting-ip','local'))]
+            buckets=[f'account:EMP{body.employee_id:04d}','ip:'+digest(request.headers.get('cf-connecting-ip','local'))]
             limits=[]
             for key in buckets:
                 c.execute('INSERT INTO auth_login_limits(bucket) VALUES(%s) ON CONFLICT DO NOTHING',(key,))
@@ -52,7 +79,7 @@ def build_auth(connection_factory):
             if any(row['attempts']>=(5 if i==0 else 30) for i,row in enumerate(limits)):
                 status=429
             else:
-                person=c.execute('SELECT employee_id,employee_code,employee_name,password FROM employees WHERE employee_code=%s FOR UPDATE',(body.employee_code,)).fetchone()
+                person=c.execute('SELECT employee_id,employee_name,password FROM employees WHERE employee_id=%s FOR UPDATE',(body.employee_id,)).fetchone()
                 if not person or not person['password'] or not hmac.compare_digest(body.password.encode(),person['password'].encode()):
                     c.execute('UPDATE auth_login_limits SET attempts=attempts+1 WHERE bucket=ANY(%s)',(buckets,));status=401
                 else:
@@ -61,15 +88,15 @@ def build_auth(connection_factory):
                     token=secrets.token_hex(32);csrf=secrets.token_hex(32)
                     c.execute("INSERT INTO auth_sessions(session_hash,employee_id,csrf_token,expires_at) VALUES(%s,%s,%s,now()+interval '8 hours')",(digest(token),person['employee_id'],csrf))
         if status:
-            raise HTTPException(status,'登入嘗試過多，請 15 分鐘後再試。' if status==429 else '工號或密碼錯誤。')
+            raise HTTPException(status,'登入嘗試過多，請 15 分鐘後再試。' if status==429 else '員工編號或密碼錯誤。')
         response.set_cookie(COOKIE,token,max_age=28800,httponly=True,secure=request.url.scheme=='https',samesite='strict')
-        return {'employee':{'employee_id':person['employee_id'],'employee_code':person['employee_code'],'employee_name':person['employee_name']},'csrf_token':csrf}
+        return {'employee':{'employee_id':person['employee_id'],'employee_name':person['employee_name']},'csrf_token':csrf}
 
     @router.get('/session')
     def session(request: Request):
         employee=require_employee(request)
         with connection_factory() as c:
-            person=c.execute('SELECT employee_id,employee_code,employee_name FROM employees WHERE employee_id=%s',(employee,)).fetchone()
+            person=c.execute('SELECT employee_id,employee_name FROM employees WHERE employee_id=%s',(employee,)).fetchone()
         return {'employee':person,'csrf_token':request.state.session['csrf_token']}
 
     @router.post('/logout')
