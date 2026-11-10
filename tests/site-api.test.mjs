@@ -4,6 +4,7 @@ import {randomBytes} from 'node:crypto';
 import fs from 'node:fs';
 import {openDatabase} from '../site-backend/db.js';
 import {handleApi} from '../site-backend/api.js';
+import {hashDevPassword} from '../site-backend/dev-api.js';
 
 const schema='fleetflow_test_'+randomBytes(6).toString('hex');
 const env=process.env;
@@ -274,4 +275,24 @@ test('pre-migration legacy column does not leak into canonical API responses',as
     await sql.begin(tx=>tx.unsafe(fs.readFileSync('backend/migrations/007_unify_employee_identity.sql','utf8').replaceAll('fleetflow',schema)).simple());
     await sql.end({timeout:1});
   }
+});
+
+
+test('DEV inventory creation, historical archive/restore and open-trip protection preserve real database relationships',async()=>{
+  const r=await resources(),configuration={...env,DEV_ADMIN_PASSWORD_HASH:await hashDevPassword('synthetic-inventory-test')};let auth={};
+  async function dev(path,method='GET',body){const response=await handleApi(new Request('https://fleetflow.test/api/dev/'+path,{method,headers:auth,...(body===undefined?{}:{body:JSON.stringify(body)})}),configuration,()=>openDatabase(env,schema));return {status:response.status,data:await response.json(),cookie:response.headers.get('Set-Cookie')};}
+  const session=await dev('login','POST',{username:'DEV',password:'synthetic-inventory-test'});assert.equal(session.status,200);auth={Cookie:session.cookie.split(';')[0],'X-CSRF-Token':session.data.csrf_token};
+  const body={license_plate:'DEV-'+randomBytes(4).toString('hex'),vehicle_model:'Synthetic inventory test',vehicle_status:'available'},created=await dev('vehicles','POST',body);assert.equal(created.status,201);const vehicle=created.data;
+  assert.equal((await dev('vehicles','POST',{...body,license_plate:body.license_plate.toLowerCase()})).status,409);
+  const sql=openDatabase(env,schema);
+  try{
+    const dispatch=(await sql.unsafe("INSERT INTO dispatches(application_id,vehicle_id,actual_start_date,actual_end_date) VALUES($1,$2,now()-interval '1 hour',now()+interval '1 hour') RETURNING *",[r.application.application_id,vehicle.vehicle_id]))[0];
+    await sql.unsafe("INSERT INTO maintenance_records VALUES($1,'2026-11-10','Synthetic oil',10)",[vehicle.vehicle_id]);await sql.unsafe("INSERT INTO refueling_records VALUES($1,'2026-11-10',1,10)",[vehicle.vehicle_id]);
+    assert.equal((await dev('vehicles/'+vehicle.vehicle_id,'DELETE')).status,409);
+    await sql.unsafe('UPDATE dispatches SET returned_at=now() WHERE dispatch_id=$1',[dispatch.dispatch_id]);
+    const archived=await dev('vehicles/'+vehicle.vehicle_id,'DELETE');assert.equal(archived.status,200);assert.equal(archived.data.archived,true);assert.equal(archived.data.vehicle_status,'retired');
+    assert.equal((await dev('vehicles/'+vehicle.vehicle_id,'DELETE')).status,200);
+    for(const table of ['vehicles','dispatches','maintenance_records','refueling_records'])assert.equal((await sql.unsafe(`SELECT * FROM ${table} WHERE vehicle_id=$1`,[vehicle.vehicle_id])).length,1);
+    const restored=await dev('vehicles/'+vehicle.vehicle_id,'PUT',body);assert.equal(restored.status,200);assert.equal(restored.data.vehicle_status,'available');assert.equal(restored.data.vehicle_id,vehicle.vehicle_id);
+  }finally{await sql.end({timeout:1});}
 });

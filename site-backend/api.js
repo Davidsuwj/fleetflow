@@ -1,3 +1,4 @@
+import {handleDevApi} from './dev-api.js';
 import {openDatabase} from './db.js';
 import {validate,id,readBody,ApiError} from './validation.js';
 import {queries} from './queries.js';
@@ -30,6 +31,7 @@ export async function handleApi(request,env,databaseFactory=openDatabase){
   let sql;
   try{
     if(!['GET','POST','PUT','DELETE'].includes(method))throw new ApiError(405,'不支援的操作。');
+    if(resource==='dev'){sql=databaseFactory(env);return await handleDevApi(request,env,sql);}
     if(resource==='auth'){sql=databaseFactory(env);return await handleAuth(request,sql);}
     if(['employee-context','my-applications','my-dispatches','availability'].includes(resource)||(['vehicles','health'].includes(resource)&&method==='GET')){
       sql=databaseFactory(env);const session=await requireSession(request,sql);

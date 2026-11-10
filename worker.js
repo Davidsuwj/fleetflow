@@ -1,5 +1,5 @@
 import {handleApi} from './site-backend/api.js';
-// Frontend and API both run on GPT Sites. Owner-private access is enforced by the platform.
+// Public shell; employee and DEV authorization are enforced server-side.
 export function createWorker(assets, apiHandler=handleApi) {
   return {async fetch(request, env) {
     const url=new URL(request.url);
@@ -9,7 +9,7 @@ export function createWorker(assets, apiHandler=handleApi) {
       const origin=request.headers.get('Origin');
       if(origin && origin!==url.origin) return Response.json({detail:'請在此網站內操作。'},{status:403,headers:common});
       const resource=url.pathname.split('/')[2];
-      if(!['auth','employee-context','my-applications','my-dispatches','availability','vehicles','health'].includes(resource)
+      if(!['dev','auth','employee-context','my-applications','my-dispatches','availability','vehicles','health'].includes(resource)
         || (['vehicles','health'].includes(resource)&&request.method!=='GET')) return Response.json({detail:'找不到指定 API。'},{status:404,headers:common});
       if(!env.DB_HOST || !env.DB_NAME || !env.DB_USER || !env.DB_PASSWORD) return Response.json({detail:'資料庫連線設定尚未完成。'},{status:503,headers:common});
       const response=await apiHandler(request,env);

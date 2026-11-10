@@ -14,7 +14,7 @@ Cookie 為 HttpOnly、SameSite=Strict、Path=/，HTTPS 加 Secure。本機 HTTP 
 
 車輛預約共享所有員工的車牌、姓名、用途與起迄，符合共同查空車需求。私人申請／行程操作、個人電話及統計仍限本人；不共享密碼。未登入無法取得車輛或預約資料。
 
-Site 依需求設為 Public，登入頁可由取得連結者開啟。員工資料 API 仍驗證員工編號登入 session。正式 Worker 不公開名冊管理、人工審核／派車或費用寫入。Python 參考版的內部基礎 CRUD 維持 SERVICE_API_KEY／loopback 保護；個人路由改用同樣 session 驗證。
+Site 依需求設為 Public，登入頁可由取得連結者開啟。員工資料 API 仍驗證員工編號登入 session。正式 Worker 不公開名冊管理、人工審核／派車；車輛及費用寫入僅由獨立 DEV 後台授權。Python 參考版的內部基礎 CRUD 維持 SERVICE_API_KEY／loopback 保護；個人路由改用同樣 session 驗證。
 
 ## 完整性
 
@@ -25,3 +25,10 @@ SQL 參數化、PK／FK／UNIQUE／CHECK、日期複合主鍵。聯絡電話不�
 員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。
 
 數字員工編號與舊格式相容輸入先正規化，再使用同一員工身分進行驗證及限流，不能以替換輸入格式切換身分或繞過限流。
+
+
+## DEV 權限與車輛資料保護
+
+DEV 帳號由 Sites 秘密 DEV_ADMIN_PASSWORD_HASH 啟用，僅保存 PBKDF2-SHA256（100000 次、隨機 salt）驗證值，不提供預設密碼。獨立 fleetflow_dev_session Cookie（Path=/api/dev），session 綁定憑證版本；更換 DEV hash 即使舊 session 失效。DEV 登入每 15 分鐘帳號錯 10 次、來源錯 30 次限流，寫入仍需 CSRF。管理功能不賦予一般員工，亦不放寬原有路由。
+
+刪除車輛一律以 retired 狀態可復原封存，不實體刪除，不級聯刪除關聯資料。有未開始、進行中或逾期未歸還預約即拒絕封存；預約與封存使用同一車輛列鎖避免競爭。歷史與車牌唯一性皆保留，封存車輛不再提供預約。

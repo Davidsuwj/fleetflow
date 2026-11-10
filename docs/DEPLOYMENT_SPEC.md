@@ -10,7 +10,7 @@ Site：https://fleetflow-company-vehicles.davidsu881209.chatgpt.site
 
 .openai/hosting.json 已綁定既有 Site，後續更新重用同一 project_id。依需求設定 Public，任何取得連結者可開啟登入頁；應用程式使用員工編號 employee_id＋密碼登入。
 
-員工版開放 auth/login、auth/session、auth/logout，以及需登入的 employee-context、my-applications、my-dispatches、availability、唯讀 vehicles 與 health。employee-options 移除。不部署管理者介面；Worker 不開放舊的名冊維護、人工審核、人工派車或費用管理 API。公司基本資料以 SQL 或本機 Python 參考 API 維護；employee-context 額外提供大家的共享預約，個人資料仍由 session 篩選。
+員工版開放 auth/login、auth/session、auth/logout，以及需登入的 employee-context、my-applications、my-dispatches、availability、唯讀 vehicles 與 health。employee-options 移除。另有獨立 DEV 管理介面，提供車輛及費用紀錄管理；Worker 不開放舊的名冊維護、人工審核、人工派車或未授權費用管理 API。公司基本資料以 SQL 或本機 Python 參考 API 維護；employee-context 額外提供大家的共享預約，個人資料仍由 session 篩選。
 
 ## 執行環境
 
@@ -78,3 +78,10 @@ GitHub 保存完整程式及文件；main 為單一完整提交。Sites 來源�
 網站第 10 版已先發布不依賴 employee_code 的相容 Worker；畫面、登入、API 及正式 schema 現在統一使用 employee_id。舊 EMP 格式只在輸入層轉換成同一員工編號，原密碼不變。隔離 PostgreSQL 18.6 另驗證新建、重複執行、資料保留與不符規則時整筆 rollback。
 
 若需回退舊版程式，須先在同一交易及 advisory lock 下執行歷史 006 重建衍生欄位，移除 version 7 標記後才回退網站版本。既有員工不需重設密碼或重編，已開啟的網站頁面請重新整理。
+
+
+## DEV 與車輛管理更新（2026-11-10）
+
+DEV_ADMIN_PASSWORD_HASH 以 Sites 秘密值設定；`dev_auth_sessions` 透過受 advisory lock 保護的 additive bootstrap 建立，不變更領域資料表。新增／編輯／封存車輛沿用既有 vehicles 結構與 retired 狀態，本次無資料遷移、資料清除或重設帳號。原有 DEV 後台與員工全部未歸還行程顯示一併保留。
+
+GitHub 後續更新以當前 main 為父提交，保留既有歷史；Sites 與 GitHub 為分開的來源紀錄，不強制推送或覆寫歷史。

@@ -9,7 +9,7 @@ if(previewSchema!=='fleetflow'&&!/^fleetflow_test_[a-f0-9]{12}$/.test(previewSch
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.webp':'image/webp'};
 function loadAssets(){
   const assets={};
-  for(const file of ['index.html','style.css','app.js','config.js','favicon.svg','cullinan.webp']){
+  for(const file of ['index.html','style.css','app.js','dev-utils.js','config.js','favicon.svg','cullinan.webp']){
     const binary=file.endsWith('.webp');assets['/'+file]={body:fs.readFileSync(path.join('dist',file)).toString(binary?'base64':'utf8'),binary,type:mime[path.extname(file)]};
   }
   return assets;

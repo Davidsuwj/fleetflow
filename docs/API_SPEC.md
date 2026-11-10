@@ -54,3 +54,22 @@ maintenance 含 vehicle_id、maintenance_date、maintenance_item、maintenance_c
 所有業務值均使用參數化 SQL。查詢在 repeatable-read 唯讀交易；預約先鎖員工再鎖車輛，重查後同交易建立／修改申請及派車。取消及刪單僅處理本人未開始預約。失敗整筆 rollback，不回傳 SQL 或秘密。
 
 員工識別統一使用 `employees.employee_id`（數字員工編號），同時作為登入帳號與既有 PK／FK；不另設工號欄位。密碼、員工編號與既有申請／派車關聯維持不變。舊 `EMP0001` 格式及登入 JSON 的 `employee_code` 欄位僅為相容輸入，伺服器轉成同一個 employee_id，不另外儲存或回傳 employee_code。ERD／關聯綱目中員工只有 employee_id 為主鍵並加底線。
+
+
+## DEV 管理後台
+
+DEV 使用獨立 `/api/dev/login`（username、password）、`GET /api/dev/session` 及 `POST /api/dev/logout`。一般員工 Cookie 無法授權；以下寫入皆需 DEV session 與 CSRF，沿用同來源限制。
+
+| 方法 | 路徑 | 功能 |
+|---|---|---|
+| GET | /api/dev/context | 全車隊，含封存車輛、保養與加油紀錄 |
+| POST | /api/dev/vehicles | 新增車輛，回傳系統產生的 vehicle_id，201 |
+| PUT | /api/dev/vehicles/{id} | 編輯車牌、車型與狀態；可復原封存車輛 |
+| DELETE | /api/dev/vehicles/{id} | **可復原封存**，設定 retired，回傳 archived=true；不刪資料列 |
+| POST | /api/dev/maintenance | 新增保養紀錄，201 |
+| POST | /api/dev/refueling | 新增加油紀錄，201 |
+| POST | /api/dev/import | 原子匯入 type、records，最多 100 筆，201 |
+
+新增／編輯只接受 license_plate（1–20 字）、vehicle_model（1–100 字）、vehicle_status（available／maintenance／retired）。文字去首尾空白，車牌轉大寫；包含封存車輛在內，不分大小寫的車牌重複回傳 409。車牌異動以交易 advisory lock 序列化，並保留資料庫 UNIQUE 保護。
+
+封存鎖定車輛後重查所有未歸還的派車，包含尚未開始及逾期者；有任一筆即 409，資料不變。封存保留車輛主鍵、已歸還行程及全部保養／加油資料；重複封存安全，透過 PUT 改回 available 即復原。沒有永久刪除車輛的 DEV 端點，不需 schema 變更。

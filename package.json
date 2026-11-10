@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-worker.mjs",
-    "test": "node --env-file-if-exists=.env --test tests/worker.test.mjs tests/auth-identity.test.mjs tests/identity-ui.test.mjs tests/monthly-chart.test.mjs tests/site-api.test.mjs",
-    "check": "node --check dist/app.js && node --check worker.js && node --check site-backend/api.js && node --check site-backend/employee-api.js && node --check site-backend/auth.js && node --check site-backend/availability.js",
-    "dev": "node --env-file-if-exists=.env scripts/dev-server.mjs"
+    "test": "node --test tests/worker.test.mjs tests/auth-identity.test.mjs tests/identity-ui.test.mjs tests/monthly-chart.test.mjs tests/overview.test.mjs tests/dev-api.test.mjs tests/dev-ui.test.mjs && node --env-file-if-exists=.env --test tests/site-api.test.mjs",
+    "check": "node --check dist/app.js && node --check worker.js && node --check site-backend/api.js && node --check site-backend/employee-api.js && node --check site-backend/auth.js && node --check site-backend/availability.js && node --check site-backend/dev-api.js && node --check dist/dev-utils.js",
+    "dev": "node --env-file-if-exists=.env scripts/dev-server.mjs",
+    "test:unit": "node --test tests/worker.test.mjs tests/auth-identity.test.mjs tests/identity-ui.test.mjs tests/monthly-chart.test.mjs tests/overview.test.mjs tests/dev-api.test.mjs tests/dev-ui.test.mjs"
   },
   "dependencies": {
     "postgres": "^3.4.9"
